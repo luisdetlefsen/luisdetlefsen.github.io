@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="description" content="if you travel the same distance, you get less wet if you run. Here is a simulation that helps you visualize it." />
+    <title>Do you get less wet walking or running in the rain? - Simulation</title>
+    <link href="styles/bootstrap.min.css" rel="stylesheet"/>
+	<link href="styles/site.css" rel="stylesheet"/>
+  <script src="jquery-2.1.4.min.js"></script>
+</head>
+
+<style>
+    .clickable {
+        cursor: pointer;
+    }   
+
+    .panel-heading span {
+        margin-top: -30px;
+        font-size: 15px;
+    }
+    
+</style>
+<body>
+<div class="container body-content">
+<h2>Rain simulation</h2>
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12">
+       <strong> Do you get less wet walking or running in the rain?</strong>
+        The answer is, if you travel the same distance, you get less wet if you run. 
+        This has been proven multiple times, but here is a simulation that helps you visualize it.
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 col-md-12 col-sm-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4>Settings</h4>
+                <span class="pull-right clickable"><i class="glyphicon glyphicon-chevron-up"></i></span>
+            </div>
+            <div class="panel-body">
+                <form>
+
+                    <div class="row">
+                        <div class="input-group">
+                            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                                <label for="dotsAmount">Number of raindrops</label>
+                                <input class="form-control" id='dotsAmount' type="number" value="1300" step="50" min="0" />
+                            </div>
+                            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                                <label for="windSpeed">Wind speed</label>
+                                <input android:inputType="numberDecimal|numberSigned" class="form-control" id='windSpeed' type="number" value="0" />
+                            </div>
+                            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                                <label for="dropSpeed">Raindrops fall speed</label>
+                                <input class="form-control" id='dropSpeed' type="number" value="10" />
+                            </div>
+                            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                                <label>Distance traveled</label>
+                                <input class="form-control" type="number" value="500" readonly />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                            <label>Subject A speed</label>
+                            <input class="form-control" id='subjectASpeed' type="number" value="-1" />
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                            <label>Subject A height</label>
+                            <input class="form-control" id='subjectAHeight' type="number" value="18" min="1" />
+                        </div>
+                        <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                            <label>Subject A width</label>
+                            <input class="form-control" id='subjectAWidth' type="number" value="5" min="1" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                                <div class="input-group">
+                                    <label>Subject B speed</label>
+                                    <input class="form-control" id='subjectBSpeed' type="number" value="-3" />
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                                <div class="input-group">
+                                    <label>Subject B height</label>
+                                    <input class="form-control" id='subjectBHeight' type="number" value="18" min="1" />
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                                <div class="input-group">
+                                    <label>Subject B width</label>
+                                    <input class="form-control" id='subjectBWidth' type="number" value="5" min="1" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>                    
+                </form>
+            </div>
+        </div>
+    </div>
+    </div>
+
+
+<div class="row">
+    <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+        <canvas id="dotsCanvas" width="500" height="200"></canvas>
+    </div>
+
+    <div class='col-lg-6 col-md-6 col-sm-12 col-xs-12'>
+        <span >Raindrops over subject <label style="color:#FA8072;font-weight:bold;">A</label>:</span>
+        <a id="dropsSubjectA"></a>
+        <br />
+        <span> Raindrops over subject <label style="color:#008000;font-weight:bold;">B</label>:</span>
+        <a id='dropsSubjectB'></a><br />
+        <button type="submit" class="btn btn-primary" id="btnIniciar">Start</button>
+    </div>
+</div>
+<hr />
+</div>
+<script>
+    $(document).ready(function ()
+    {
+        var canvasElement = document.getElementById("dotsCanvas");
+
+        var MAX_X = canvasElement.width;
+        var MAX_Y = canvasElement.height;
+        var DOTS_AMOUNT = 1300;
+
+
+        var WIND_SPEED = 0;
+        var FALL_SPEED = 10;
+
+        var SUBJECT_A_SPEED = -1;
+        var SUBJECT_B_SPEED = -3;
+
+        var JOIN_THRESHOLD = 10;
+
+        var dropsSubjectA = 0;
+        var dropsSubjectB = 0;
+
+        var DOT_COLOR = { "R": 0, "G": 0, "B": 255, "A": 255 };
+        var BACKGROUND_COLOR = { "R": 0, "G": 0, "B": 0, "A": 255 };
+        var LINE_COLOR = { "R": 0, "G": 255, "B": 100, "A": 0.2 };
+
+
+        var subjectA = {
+            "x": MAX_X
+                        , "y": MAX_Y
+                        , "speedX": SUBJECT_A_SPEED
+                        , "width": 5
+                        , "height": 18
+                        , "color": { "R": 250, "G": 128, "B": 114, "A": 1 }
+                        , "canCollectDrops": true
+        }
+
+        var subjectB = {
+            "x": MAX_X
+                        , "y": MAX_Y
+                        , "speedX": SUBJECT_B_SPEED
+                        , "width": 5
+                        , "height": 18
+                        , "color": { "R": 0, "G": 128, "B": 0, "A": 1 }
+                        , "canCollectDrops": true
+        }
+
+        var canvasContext = canvasElement.getContext("2d");
+        var canvasData = canvasContext.getImageData(0, 0, MAX_X, MAX_Y);
+
+        var fps = 25;
+
+        var dotsArray = [];
+
+        fillBackground();
+        initDotsArray();
+        canvasContext.strokeStyle = 'rgba(' + LINE_COLOR.R + ',' + LINE_COLOR.G + ',' + LINE_COLOR.B + ',' + LINE_COLOR.A + ')';
+        updateCanvas();
+        var intervalHandle;// = setInterval(moveDots, 1000/fps);
+
+        function updateUIInfo()
+        {
+            document.getElementById('dropsSubjectA').innerHTML = dropsSubjectA;
+            document.getElementById('dropsSubjectB').innerHTML = dropsSubjectB;
+        }
+
+        function drawSubjects()
+        {
+            var colorA = subjectA.color;
+            canvasContext.beginPath();
+            canvasContext.lineWidth = 3;
+            canvasContext.strokeStyle = 'rgba(' + colorA.R + ',' + colorA.G + ',' + colorA.B + ',' + colorA.A + ')';
+            canvasContext.rect(subjectA.x - (subjectA.width / 2), subjectA.y - (subjectA.height / 2), subjectA.width, subjectA.height);
+            canvasContext.stroke();
+
+            var colorB = subjectB.color;
+            canvasContext.beginPath();
+            canvasContext.lineWidth = 3;
+            canvasContext.strokeStyle = 'rgba(' + colorB.R + ',' + colorB.G + ',' + colorB.B + ',' + colorB.A + ')';
+            canvasContext.rect(subjectB.x - (subjectB.width / 2), subjectB.y - (subjectB.height / 2), subjectB.width, subjectB.height);
+            canvasContext.stroke();
+        }
+
+        function updateSubjectsPosition()
+        {
+            if (subjectA.x - (subjectA.width / 2) > 0)
+                subjectA.x += subjectA.speedX;
+            else
+                subjectA.canCollectDrops = false;
+
+            if (subjectB.x - (subjectB.width / 2) > 0)
+                subjectB.x += subjectB.speedX;
+            else
+                subjectB.canCollectDrops = false;
+
+        }
+
+        function moveDots()
+        {
+            clearPixelsBuffer();
+            updateCanvas();
+
+            updateDotsPositions();
+            updateSubjectsPosition();
+            fillPixelsBuffer();
+
+            updateCanvas();
+
+            drawSubjects();
+
+            if (!subjectA.canCollectDrops && !subjectB.canCollectDrops)
+                clearInterval(intervalHandle);
+
+            updateUIInfo();
+            //joinNeighbourPixels();
+        }
+
+        function fillBackground()
+        {
+            for (var i = 0; i < canvasData.data.length; i += 4) {
+                canvasData.data[i + 0] = BACKGROUND_COLOR.R;
+                canvasData.data[i + 1] = BACKGROUND_COLOR.G;
+                canvasData.data[i + 2] = BACKGROUND_COLOR.B;
+                canvasData.data[i + 3] = BACKGROUND_COLOR.A;
+            }
+        }
+
+        function joinNeighbourPixels()
+        {
+            for (var i in dotsArray) {
+                for (var j in dotsArray) {
+                    if (i == j)
+                        continue;
+                    if (Math.abs(dotsArray[i].x - dotsArray[j].x) <= JOIN_THRESHOLD && Math.abs(dotsArray[i].y - dotsArray[j].y) <= JOIN_THRESHOLD) {
+                        canvasContext.beginPath();
+                        canvasContext.strokeStyle = 'rgba(' + LINE_COLOR.R + ',' + LINE_COLOR.G + ',' + LINE_COLOR.B + ',' + LINE_COLOR.A + ')';
+                        canvasContext.moveTo(dotsArray[i].x, dotsArray[i].y);
+                        canvasContext.lineTo(dotsArray[j].x, dotsArray[j].y);
+                        canvasContext.stroke();
+                    }
+                }
+            }
+        }
+
+        function updateDotsPositions()
+        {
+            for (var i in dotsArray) {
+                dotsArray[i].x += dotsArray[i].speedX;
+                dotsArray[i].y += dotsArray[i].speedY;
+
+
+                if (subjectA.canCollectDrops && !dotsArray[i].droppedOnA && dotsArray[i].x >= subjectA.x - (subjectA.width / 2) && dotsArray[i].x <= subjectA.x + (subjectA.width / 2)) {
+                    if (dotsArray[i].y >= subjectA.y - (subjectA.height / 2)) {
+                        dotsArray[i].droppedOnA = true;
+                        dropsSubjectA++;
+                    }
+                }
+
+                if (subjectB.canCollectDrops && !dotsArray[i].droppedOnB && dotsArray[i].x >= subjectB.x - (subjectB.width / 2) && dotsArray[i].x <= subjectB.x + (subjectB.width / 2)) {
+                    if (dotsArray[i].y >= subjectB.y - (subjectB.height / 2)) {
+                        dotsArray[i].droppedOnB = true;
+                        dropsSubjectB++;
+                    }
+                }
+
+                if (dotsArray[i].droppedOnA && dotsArray[i].y < MAX_Y / 2) {
+                    dotsArray[i].droppedOnA = false;
+                }
+
+                if (dotsArray[i].droppedOnB && dotsArray[i].y < MAX_Y / 2) {
+                    dotsArray[i].droppedOnB = false;
+                }
+
+                if (dotsArray[i].x >= MAX_X)
+                    dotsArray[i].x = 0;
+                if (dotsArray[i].y >= MAX_Y) {
+                    dotsArray[i].y = getRandomInt(0, FALL_SPEED);
+                    dotsArray[i].x = getRandomInt(0, MAX_X);
+                }
+
+                if (dotsArray[i].x < 0)
+                    dotsArray[i].x = MAX_X;
+                if (dotsArray[i].y < 0)
+                    dotsArray[i].y = MAX_Y;
+            }
+        }
+
+        function fillPixelsBuffer()
+        {
+            for (var i in dotsArray) {
+                fillPixelBuffer(dotsArray[i].x, dotsArray[i].y, DOT_COLOR.R, DOT_COLOR.G, DOT_COLOR.B, DOT_COLOR.A);
+            }
+        }
+
+        function clearPixelsBuffer()
+        {
+            for (var i in dotsArray) {
+                clearPixelBuffer(dotsArray[i].x, dotsArray[i].y);
+            }
+        }
+
+        function clearPixelBuffer(x, y)
+        {
+            var index = (x + y * MAX_X) * 4;
+
+            canvasData.data[index + 0] = BACKGROUND_COLOR.R;
+            canvasData.data[index + 1] = BACKGROUND_COLOR.G;
+            canvasData.data[index + 2] = BACKGROUND_COLOR.B;
+            canvasData.data[index + 3] = BACKGROUND_COLOR.A;
+        }
+
+        function fillPixelBuffer(x, y, r, g, b, a)
+        {
+            var index = (x + y * MAX_X) * 4;
+
+            canvasData.data[index + 0] = r;
+            canvasData.data[index + 1] = g;
+            canvasData.data[index + 2] = b;
+            canvasData.data[index + 3] = a;
+        }
+
+        function updateCanvas()
+        {
+            canvasContext.putImageData(canvasData, 0, 0);
+        }
+
+        function initDotsArray()
+        {
+            for (var i = 0; i < DOTS_AMOUNT; i++) {
+                dotsArray.push(generateRandPos());
+            }
+            orderDotsArray();
+        }
+
+        function orderDotsArray()
+        {
+            dotsArray.sort(
+                function (a, b)
+                {
+                    if (a.x == b.x && a.y == b.y)
+                        return 0;
+                    if (a.x > b.x && a.y > b.y)
+                        return 1;
+                    if (a.x < b.x && a.y < b.y)
+                        return -1;
+                    if (a.x > b.x && a.y < b.y)
+                        return -1;
+                    if (a.x < b.x && a.y > b.y)
+                        return 1;
+                }
+            );
+        }
+
+        function generateRandPos()
+        {
+            if (WIND_SPEED < 0) {
+                return {
+                    "x": getRandomInt(0, MAX_X)
+                        , "y": getRandomInt(0, MAX_Y)
+                        , "speedX": getRandomInt(WIND_SPEED, -1)
+                        , "speedY": FALL_SPEED
+                        , "droppedOnA": false
+                        , "droppedOnB": false
+                };
+            }
+
+            return {
+                "x": getRandomInt(0, MAX_X)
+                    , "y": getRandomInt(0, MAX_Y)
+                    , "speedX": getRandomInt(1, WIND_SPEED)
+                    , "speedY": FALL_SPEED
+                    , "droppedOnA": false
+                    , "droppedOnB": false
+            };
+        }
+
+        function getRandomInt(min, max)
+        {
+            if (max < 0) {
+                return Math.floor(Math.random() * (min - max)) + max;
+            }
+            return Math.floor(Math.random() * (max - min)) + min;
+        }
+
+        function start()
+        {
+            if (intervalHandle)
+                clearInterval(intervalHandle);
+            dotsArray = [];
+
+            DOTS_AMOUNT = parseInt($('#dotsAmount').val());
+            WIND_SPEED = parseInt($('#windSpeed').val());
+            FALL_SPEED = parseInt($('#dropSpeed').val());
+            SUBJECT_A_SPEED = parseInt($('#subjectASpeed').val());
+            SUBJECT_B_SPEED = parseInt($('#subjectBSpeed').val());
+
+            fillBackground();
+            initDotsArray();
+            canvasContext.strokeStyle = 'rgba(' + LINE_COLOR.R + ',' + LINE_COLOR.G + ',' + LINE_COLOR.B + ',' + LINE_COLOR.A + ')';
+
+            subjectA.x = MAX_X;
+            subjectB.x = MAX_X;
+            subjectA.speedX = SUBJECT_A_SPEED;
+            subjectB.speedX = SUBJECT_B_SPEED;
+            subjectA.canCollectDrops = true;
+            subjectB.canCollectDrops = true;
+            subjectA.height = parseInt($('#subjectAHeight').val());
+            subjectB.height = parseInt($('#subjectBHeight').val());
+            subjectA.width = parseInt($('#subjectAWidth').val());
+            subjectB.width = parseInt($('#subjectBWidth').val());
+
+            dropsSubjectA = 0;
+            dropsSubjectB = 0;
+            intervalHandle = setInterval(moveDots, 1000 / fps);
+            return false;
+        }
+
+        $('#btnIniciar').on('click', start);
+
+
+    });
+ 
+    $(document).on('click', '.panel-heading span.clickable', function (e) {
+        var $this = $(this);
+        if (!$this.hasClass('panel-collapsed')) {
+            $this.parents('.panel').find('.panel-body').slideUp();
+            $this.addClass('panel-collapsed');
+            $this.find('i').removeClass('glyphicon-chevron-up').addClass('glyphicon-chevron-down');
+        } else {
+            $this.parents('.panel').find('.panel-body').slideDown();
+            $this.removeClass('panel-collapsed');
+            $this.find('i').removeClass('glyphicon-chevron-down').addClass('glyphicon-chevron-up');
+        }
+    })
+</script>
+</body>
+</html>
