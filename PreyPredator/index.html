@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+    <body>
+
+        <style>
+            #container {
+                width: 100%; /*can be in percentage also.*/
+                height: auto;
+                margin: 0 auto;
+                padding: 10px;
+                position: relative;
+            }
+        </style>
+        <link href="content/bootstrap.min.css" rel="stylesheet"/>
+        <link href="content/site.css" rel="stylesheet"/>
+        <script src="scripts/jquery-2.1.4.min.js"></script>
+        <script src="Scripts/pixi/pixi.min.js"></script>
+
+        <div class="row">            
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                <label for="preyAmount">Number of preys</label>
+                <input class="form-control" id='preyAmount' type="number" value="5" step="1" min="0" />
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                <label for="preySpeed">Prey speed</label>
+                <input class="form-control" id='preySpeed' type="number" value="5" />
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                <label for="predatorAmount">Number of predators</label>
+                <input class="form-control" id='predatorAmount' type="number" value="3" />
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                <label>Predator speed</label>
+                <input class="form-control" type="number" value="2" />
+            </div>            
+        </div>
+        <div class="row">
+
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                <label for="foodAmount">Number of food</label>
+                <input class="form-control" id='foodAmount' type="number" value="5" step="1" min="0" />
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                <button type="submit" class="btn btn-primary" id="btnStart">Start</button>
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">                    
+                <button type="submit" class="btn btn-danger" id="btnStop">Stop</button>                
+            </div>
+        </div>
+        <div class="row">
+
+            <div id="container" style="margin:10px;"></div>
+
+        </div>
+
+
+
+        <script>
+            function getRandomInt(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+            var windowWidth = window.innerWidth * 0.95;
+            var windowHeight = window.innerHeight * 0.9;
+            var app = new PIXI.Application(windowWidth, windowHeight, {backgroundColor: 0x1099bb});
+            //document.body.appendChild(app.view);
+            document.getElementById('container').appendChild(app.view);
+            var UP = 0, DOWN = 1, RIGHT = 2, LEFT = 3;
+            var XDIR = [RIGHT, LEFT];
+            var YDIR = [UP, DOWN];
+            var DEAD = 0, EATING = 1, HAPPY = 2, SCARED = 3, SLEEPING = 4, WORRIED = 5, SMILE = 6, ANGRY = 7;
+            var moods = [DEAD, EATING, HAPPY, SCARED, SLEEPING, WORRIED, SMILE, ANGRY];
+            var imagesBasePath = 'Content/img/smileys/';
+            var pizzaTexture = PIXI.Texture.fromImage(imagesBasePath + 'pizzat.png');
+            var deadTexture = PIXI.Texture.fromImage(imagesBasePath + 'dead.png');
+            var eatingTexture = PIXI.Texture.fromImage(imagesBasePath + 'eating.png');
+            var happyTexture = PIXI.Texture.fromImage(imagesBasePath + 'happyt.png');
+            var scaredTexture = PIXI.Texture.fromImage(imagesBasePath + 'scared.png');
+            var sleepingTexture = PIXI.Texture.fromImage(imagesBasePath + 'sleeping.png');
+            var worriedTexture = PIXI.Texture.fromImage(imagesBasePath + 'worried.png');
+            var smileTexture = PIXI.Texture.fromImage(imagesBasePath + 'smile.png');
+            var angryTexture = PIXI.Texture.fromImage(imagesBasePath + 'angryt.png');
+            var NORMAL_HEARTBEAT = 60;
+
+            var PREY_SPEED = 5, PREDATOR_SPEED = 3;
+            var predatorCount = 3, preyCount = 5, foodCount = 5;
+            function deltaMove(xdir, ydir, x, y, speed) {
+                if (xdir === LEFT)
+                    x -= speed;
+                else if (xdir === RIGHT)
+                    x += speed;
+                if (ydir === UP)
+                    y -= speed;
+                else if (ydir === DOWN)
+                    y += speed;
+
+                if (x <= spriteLength)
+                    xdir = RIGHT;
+                else if (x >= windowWidth - spriteLength)
+                    xdir = LEFT;
+
+                if (y <= spriteLength)
+                    ydir = DOWN;
+                else if (y >= windowHeight - spriteLength)
+                    ydir = UP;
+                return {x: x, y: y, xdir: xdir, ydir: ydir};
+            }
+
+            var food = [];
+            var spriteLength = 50;
+            for (var i = 0; i < foodCount; i++) {
+                //food.push(PIXI.Sprite.fromImage('../Content/img/smileys/pizzat.png'));
+                food.push(new PIXI.Sprite(pizzaTexture));
+                food[i].anchor.set(0.5);
+                food[i].x = getRandomInt(spriteLength, app.renderer.width - spriteLength);
+                food[i].y = getRandomInt(spriteLength, app.renderer.height - spriteLength);
+                app.stage.addChild(food[i]);
+            }
+
+            var preys = [];
+            for (var i = 0; i < preyCount; i++) {
+                preys.push(new PIXI.Sprite(happyTexture));
+                preys[i].anchor.set(0.5);
+                preys[i].x = getRandomInt(spriteLength, (window.innerWidth / 2) - spriteLength);
+                preys[i].y = getRandomInt(spriteLength, app.renderer.height - spriteLength);
+                preys[i].xdir = XDIR[getRandomInt(0, 1)];
+                preys[i].ydir = YDIR[getRandomInt(0, 1)];
+                preys[i].mood = HAPPY;
+                preys[i].heartBeat = NORMAL_HEARTBEAT;
+                app.stage.addChild(preys[i]);
+            }
+
+
+            var predators = [];
+            for (var i = 0; i < predatorCount; i++) {
+                predators.push(new PIXI.Sprite(angryTexture));
+                predators[i].anchor.set(0.5);
+                predators[i].x = getRandomInt(spriteLength, (window.innerWidth / 2) - spriteLength);
+                predators[i].y = getRandomInt(spriteLength, app.renderer.height - spriteLength);
+                predators[i].xdir = XDIR[getRandomInt(0, 1)];
+                predators[i].ydir = YDIR[getRandomInt(0, 1)];
+                app.stage.addChild(predators[i]);
+            }
+
+
+            function isFoodNear(x, y) {
+                var threshold = 30;
+                var foodDir = {xdir: null, ydir: null};
+                for (var i = 0; i < foodCount; i++) {
+                    if (Math.abs(food[i].x - x) < threshold && Math.abs(food[i].y - y) < threshold) {
+                        if (food[i].x <= x)
+                            foodDir.xdir = LEFT;
+                        else
+                            foodDir.xdir = RIGHT;
+                        if (food[i].y <= y)
+                            foodDir.ydir = DOWN;
+                        else
+                            foodDir.ydir = UP;
+                        return foodDir;
+                    }
+                }
+                return null;
+            }
+
+            function isPredatorNear(x, y) {
+                var threshold = 50;
+                var runDir = {xdir: null, ydir: null};
+                for (var i = 0; i < predatorCount; i++) {
+                    if (Math.abs(predators[i].x - x) < threshold && Math.abs(predators[i].y - y) < threshold) {
+                        if (predators[i].x <= x)
+                            runDir.xdir = RIGHT;
+                        else
+                            runDir.xdir = LEFT;
+                        if (predators[i].y <= y)
+                            runDir.ydir = DOWN;
+                        else
+                            runDir.ydir = UP;
+                        //console.log("X:" + x + ",Y:" + y + " || Predator x:" + predators[i].x + ",Predator y:" + predators[i].y);
+                        return runDir;
+                    }
+                }
+                return null;
+            }
+
+
+
+            // Listen for animate update
+            app.ticker.add(function (delta) {
+                // just for fun, let's rotate mr rabbit a little
+                // delta is 1 if running at 100% performance
+                // creates frame-independent tranformation
+                //   prey.rotation += 0.1 * delta;
+
+                for (var i = 0; i < preyCount; i++) {
+
+                    var predatorNear = isPredatorNear(preys[i].x, preys[i].y);
+                    if (predatorNear) {
+                        //     console.log("Predator near for prey#" + i + ": " + predatorNear.xdir);
+                        preys[i].texture = scaredTexture;
+                        preys[i].mood = SCARED;
+                        preys[i].ydir = predatorNear.ydir;
+                        preys[i].xdir = predatorNear.xdir;
+                        preys[i].heartBeat = NORMAL_HEARTBEAT * 3;
+                    } else {
+                        if (preys[i].mood === SCARED || preys[i].mood === WORRIED) {
+                            if (preys[i].heartBeat <= NORMAL_HEARTBEAT) {
+                                //   console.log("Not scared anymore. It should be happy NOW!");
+                                preys[i].texture = happyTexture;
+                                preys[i].mood = HAPPY;
+                            } else if (preys[i].heartBeat < NORMAL_HEARTBEAT * 2 && preys[i].mood === SCARED) {
+
+                                //     console.log("No predator near but still scared");
+                                preys[i].texture = worriedTexture;
+                                preys[i].mood = WORRIED;
+                                preys[i].heartBeat--;
+                            } else {
+                                preys[i].heartBeat--;
+                            }
+
+                        }
+
+
+                    }
+
+                    if (preys[i].mood === HAPPY || preys[i].mood === SCARED || preys[i].mood === WORRIED) {
+                        var newPos = deltaMove(preys[i].xdir, preys[i].ydir, preys[i].x, preys[i].y, PREY_SPEED);
+                        preys[i].x = newPos.x;
+                        preys[i].y = newPos.y;
+                        preys[i].ydir = newPos.ydir;
+                        preys[i].xdir = newPos.xdir;
+                    }
+                    //  console.log("Current mood: " + preys[i].mood);
+                    if (preys[i].mood === SCARED || preys[i].mood === WORRIED)
+                        continue;
+
+
+                    if (preys[i].mood !== EATING) {
+                        //       console.log("evaluating if it should eat");
+                        var foodDir = isFoodNear(preys[i].x, preys[i].y);
+                        if (foodDir) {
+                            preys[i].mood = EATING;
+                            preys[i].texture = eatingTexture;
+                            preys[i].ydir = foodDir.ydir;
+                            preys[i].xdir = foodDir.xdir;
+                        }
+                    }
+
+
+
+                }
+
+                for (var i = 0; i < predatorCount; i++) {
+                    var newPos = deltaMove(predators[i].xdir, predators[i].ydir, predators[i].x, predators[i].y, PREDATOR_SPEED);
+                    predators[i].x = newPos.x;
+                    predators[i].y = newPos.y;
+                    predators[i].ydir = newPos.ydir;
+                    predators[i].xdir = newPos.xdir;
+
+                }
+            });
+
+
+        </script>
+    </body>
+</html>
