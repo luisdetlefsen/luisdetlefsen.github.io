@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <<title>Prey and predator</title>
+        <title>Prey and predator</title>
     </head>
     <body>
 
@@ -52,6 +52,10 @@
                 <input class="form-control" id='distanceFood' type="number" value="30" step="1" min="0" />
             </div>
             <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                <label for="eatThreshold">Eat when energy is below</label>
+                <input class="form-control" id='eatThreshold' type="number" value="0.8" step="0.1" min="0" />
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                 <button type="submit" class="btn btn-primary" id="btnStart" onclick="start()">Start</button>
             </div>
             <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">                    
@@ -67,24 +71,25 @@
 
 
         <script>
-            /*
-             * todo:
-             * prey should have energy
+            /* 
+             prey should have energy
              prey should decrease its energy when it is not eating
              prey should increase its energy when it is eating
-             prey should run towards food
+             TODO: prey should run towards food
              prey should eat only when energy is below a certain threshold
-             prey should die if it gets in contact with a predator
-             prey should have a gender
-             prey should mate with another prey of different sex
+             TODO: prey should die if it gets in contact with a predator
+             TODO: prey should have a gender
+             TODO: prey should mate with another prey of different sex
              prey should die if it runs out of energy
-             predator should chase a prey when it is near
-             predator should have energy
-             predator should increase its energy when it eats a prey
+             TODO: predator should chase a prey when it is near
+              predator should have energy
+             TODO: predator should increase its energy when it eats a prey
              predator should decrease its energy when it is not eating
-             predator should have a gender
-             predator should mate with another predator of different sex
-             predator should die if it runs out of energy
+             TODO: predator should have a gender
+             TODO: predator should mate with another predator of different sex
+              predator should die if it runs out of energy
+    TODO: food should have an amount that can be eaten
+    TODO: food should spawn randomly every X time
              */
 
             var windowWidth = window.innerWidth * 0.95;
@@ -93,26 +98,30 @@
             var UP = 0, DOWN = 1, RIGHT = 2, LEFT = 3;
             var XDIR = [RIGHT, LEFT];
             var YDIR = [UP, DOWN];
-            var DEAD = 0, EATING = 1, HAPPY = 2, SCARED = 3, SLEEPING = 4, WORRIED = 5, SMILE = 6, ANGRY = 7;
+            var DEAD = 0, EATING = 1, HAPPY = 2, SCARED = 3, SLEEPING = 4, WORRIED = 5, SMILE = 6, ANGRY = 7, MATING = 8, LURKING = 9, CHASING = 10;
             var moods = [DEAD, EATING, HAPPY, SCARED, SLEEPING, WORRIED, SMILE, ANGRY];
             var imagesBasePath = 'Content/img/smileys/';
             var pizzaTexture = PIXI.Texture.fromImage(imagesBasePath + 'pizzat.png');
-            var deadTexture = PIXI.Texture.fromImage(imagesBasePath + 'dead.png');
-            var eatingTexture = PIXI.Texture.fromImage(imagesBasePath + 'eating.png');
+            var deadTexture = PIXI.Texture.fromImage(imagesBasePath + 'deadt.png');
+            var eatingTexture = PIXI.Texture.fromImage(imagesBasePath + 'eatingt.png');
             var happyTexture = PIXI.Texture.fromImage(imagesBasePath + 'happyt.png');
-            var scaredTexture = PIXI.Texture.fromImage(imagesBasePath + 'scared.png');
+            var scaredTexture = PIXI.Texture.fromImage(imagesBasePath + 'scaredt.png');
             var sleepingTexture = PIXI.Texture.fromImage(imagesBasePath + 'sleeping.png');
-            var worriedTexture = PIXI.Texture.fromImage(imagesBasePath + 'worried.png');
+            var worriedTexture = PIXI.Texture.fromImage(imagesBasePath + 'worriedt.png');
             var smileTexture = PIXI.Texture.fromImage(imagesBasePath + 'smile.png');
             var angryTexture = PIXI.Texture.fromImage(imagesBasePath + 'angryt.png');
+            var matingTexture = PIXI.Texture.fromImage(imagesBasePath + 'sleeping.png');
+            var MALE = 0, FEMALE = 1;
+            var GENDER = [MALE, FEMALE];
             var NORMAL_HEARTBEAT = 60;
             var DISTACE_TO_PREDATOR = 50;
             var DISTANCE_TO_DETECT_FOOD = 30;
+            var PREY_ENERGY = 1000;
+            var PREDATOR_ENERGY = 4000;
             var running = false;
-
             var PREY_SPEED = 5, PREDATOR_SPEED = 3;
             var predatorCount = 3, preyCount = 5, foodCount = 5;
-
+            var EAT_THRESHOLD = 0.8;
             var food = [];
             var spriteLength = 50;
             var preys = [];
@@ -126,10 +135,10 @@
                 foodCount = parseInt(document.getElementById('foodAmount').value);
                 DISTACE_TO_PREDATOR = parseInt(document.getElementById('distancePredator').value);
                 DISTANCE_TO_DETECT_FOOD = parseInt(document.getElementById('distanceFood').value);
+                EAT_THRESHOLD = parseFloat(document.getElementById('eatThreshold').value);
                 food = [];
                 preys = [];
                 predators = [];
-
             }
 
             function getRandomInt(min, max) {
@@ -162,15 +171,14 @@
                 var container = document.getElementById('container');
                 while (container.firstChild)
                     container.removeChild(container.firstChild);
-                // app = new PIXI.Application(windowWidth, windowHeight, {backgroundColor: 0x1099bb});
-                //  document.getElementById('container').appendChild(app.view);
             }
 
             function fillWorld() {
                 app = new PIXI.Application(windowWidth, windowHeight, {backgroundColor: 0x1099bb});
                 document.getElementById('container').appendChild(app.view);
+
+                //Food
                 for (var i = 0; i < foodCount; i++) {
-                    //food.push(PIXI.Sprite.fromImage('../Content/img/smileys/pizzat.png'));
                     food.push(new PIXI.Sprite(pizzaTexture));
                     food[i].anchor.set(0.5);
                     food[i].x = getRandomInt(spriteLength, app.renderer.width - spriteLength);
@@ -178,6 +186,7 @@
                     app.stage.addChild(food[i]);
                 }
 
+                //Preys
                 for (var i = 0; i < preyCount; i++) {
                     preys.push(new PIXI.Sprite(happyTexture));
                     preys[i].anchor.set(0.5);
@@ -187,9 +196,22 @@
                     preys[i].ydir = YDIR[getRandomInt(0, 1)];
                     preys[i].mood = HAPPY;
                     preys[i].heartBeat = NORMAL_HEARTBEAT;
+                    preys[i].energy = PREY_ENERGY;
+                    preys[i].gender = GENDER[getRandomInt(0,1)];
+
+                    var healthBar = new PIXI.Graphics();
+                    healthBar.beginFill(0x00BB00);
+                    healthBar.lineStyle(1, 0x000000);
+                    healthBar.drawRect(0, 0, spriteLength, 5);
+                    preys[i].energyBar = healthBar;
+
                     app.stage.addChild(preys[i]);
+                    app.stage.addChild(healthBar);
                 }
 
+
+
+                //Predators
                 for (var i = 0; i < predatorCount; i++) {
                     predators.push(new PIXI.Sprite(angryTexture));
                     predators[i].anchor.set(0.5);
@@ -197,7 +219,17 @@
                     predators[i].y = getRandomInt(spriteLength, app.renderer.height - spriteLength);
                     predators[i].xdir = XDIR[getRandomInt(0, 1)];
                     predators[i].ydir = YDIR[getRandomInt(0, 1)];
+                    predators[i].energy = PREDATOR_ENERGY;
+                    predators[i].mood = LURKING;
+
+                    var healthBar = new PIXI.Graphics();
+                    healthBar.beginFill(0x00BB00);
+                    healthBar.lineStyle(1, 0x000000);
+                    healthBar.drawRect(0, 0, spriteLength, 5);
+                    predators[i].energyBar = healthBar;
+
                     app.stage.addChild(predators[i]);
+                    app.stage.addChild(healthBar);
                 }
             }
 
@@ -242,6 +274,16 @@
 
             function updateLogic() {
                 for (var i = 0; i < preyCount; i++) {
+                    preys[i].energyBar.scale.set(preys[i].energy / PREY_ENERGY, 1);
+                    if (preys[i].energy <= 0) {
+                        if (preys[i].mood !== DEAD) {
+                            preys[i].mood = DEAD;
+                            preys[i].texture = deadTexture;
+                            preys[i].energyBar.scale.set(0, 1);
+                        }
+                        continue;
+                    }
+
                     var predatorNear = isPredatorNear(preys[i].x, preys[i].y);
                     if (predatorNear) {
                         //     console.log("Predator near for prey#" + i + ": " + predatorNear.xdir);
@@ -262,7 +304,10 @@
                                 preys[i].mood = WORRIED;
                                 preys[i].heartBeat--;
                             } else {
+                                preys[i].energy -= 2;//energy decreses x2 when scared
+                                //  preys[i].energyBar.scale.set(preys[i].energy / PREY_ENERGY, 1);
                                 preys[i].heartBeat--;
+
                             }
                         }
                     }
@@ -273,15 +318,35 @@
                         preys[i].y = newPos.y;
                         preys[i].ydir = newPos.ydir;
                         preys[i].xdir = newPos.xdir;
+
+                        preys[i].energyBar.position.set(preys[i].x - spriteLength / 2, preys[i].y - spriteLength * 0.8);
+
                     }
                     //  console.log("Current mood: " + preys[i].mood);
                     if (preys[i].mood === SCARED || preys[i].mood === WORRIED)
-                        continue;
+                    {
 
+
+                        continue;
+                    }
+
+
+                    if (preys[i].mood === EATING) {
+                        if (preys[i].energy <= PREY_ENERGY)
+                            preys[i].energy++;
+                        //   preys[i].energyBar.scale.set(preys[i].energy / PREY_ENERGY, 1);
+
+                        if (preys[i].energy >= PREY_ENERGY) {
+                            preys[i].mood = HAPPY;
+                            preys[i].texture = happyTexture;
+                        }
+                    }
                     if (preys[i].mood !== EATING) {
                         //       console.log("evaluating if it should eat");
+                        preys[i].energy--;
+                        //   preys[i].energyBar.scale.set(preys[i].energy / PREY_ENERGY, 1);
                         var foodDir = isFoodNear(preys[i].x, preys[i].y);
-                        if (foodDir) {
+                        if (foodDir && preys[i].energy <= PREY_ENERGY * EAT_THRESHOLD) {
                             preys[i].mood = EATING;
                             preys[i].texture = eatingTexture;
                             preys[i].ydir = foodDir.ydir;
@@ -291,11 +356,28 @@
                 }
 
                 for (var i = 0; i < predatorCount; i++) {
+                    predators[i].energyBar.scale.set(predators[i].energy / PREDATOR_ENERGY, 1);
+                    
+                    if (predators[i].energy <= 0) {
+                        if (predators[i].mood !== DEAD) {
+                            predators[i].mood = DEAD;
+                            predators[i].texture = deadTexture;
+                            predators[i].energyBar.scale.set(0, 1);
+                        }
+                        continue;
+                    }
+                    
+                    if(predators[i].mood !== EATING){
+                        predators[i].energy--;
+                    }
+
+
                     var newPos = deltaMove(predators[i].xdir, predators[i].ydir, predators[i].x, predators[i].y, PREDATOR_SPEED);
                     predators[i].x = newPos.x;
                     predators[i].y = newPos.y;
                     predators[i].ydir = newPos.ydir;
                     predators[i].xdir = newPos.xdir;
+                    predators[i].energyBar.position.set(predators[i].x - spriteLength / 2, predators[i].y - spriteLength * 0.8);
                 }
             }
 
