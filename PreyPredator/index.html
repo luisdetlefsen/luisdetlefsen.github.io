@@ -78,20 +78,20 @@
              TODO: prey should run towards food
              prey should eat only when energy is below a certain threshold
              TODO: prey should die if it gets in contact with a predator
-    TODO: prey should seek another prey to mate
+             TODO: prey should seek another prey to mate
              prey should have a gender
              TODO: prey should mate with another prey of different sex
              prey should die if it runs out of energy
              TODO: predator should chase a prey when it is near
-              predator should have energy
-              TODO: predator should seek another predator to mate
+             predator should have energy
+             TODO: predator should seek another predator to mate
              TODO: predator should increase its energy when it eats a prey
              predator should decrease its energy when it is not eating
              predator should have a gender
              TODO: predator should mate with another predator of different sex
-              predator should die if it runs out of energy
-    TODO: food should have an amount that can be eaten
-    TODO: food should spawn randomly every X time
+             predator should die if it runs out of energy
+             TODO: food should have an amount that can be eaten
+             TODO: food should spawn randomly every X time
              */
 
             var windowWidth = window.innerWidth * 0.95;
@@ -201,22 +201,23 @@
                     preys[i].mood = HAPPY;
                     preys[i].heartBeat = NORMAL_HEARTBEAT;
                     preys[i].energy = PREY_ENERGY;
-                    preys[i].gender = GENDER[getRandomInt(0,1)];
+                    preys[i].gender = GENDER[getRandomInt(0, 1)];
+                    preys[i].food = PREY_ENERGY; //when it dies, it provides this amount of food
 
                     var healthBar = new PIXI.Graphics();
                     healthBar.beginFill(0x00BB00);
                     healthBar.lineStyle(1, 0x000000);
-                    healthBar.drawRect(0, 0, spriteLength, 5);
+                    healthBar.drawRect(-25, -40, spriteLength, 5);
                     preys[i].energyBar = healthBar;
-                    
-                    var genderFlag = new PIXI.Sprite(preys[i].gender===MALE?maleTexture:femaleTexture);
-                    genderFlag.x = preys[i].x;
-                    genderFlag.y = preys[i].y;
+
+                    var genderFlag = new PIXI.Sprite(preys[i].gender === MALE ? maleTexture : femaleTexture);
+                    genderFlag.x = -45;
+                    genderFlag.y = -45;
                     preys[i].genderFlag = genderFlag;
 
-                    app.stage.addChild(preys[i]);
-                    app.stage.addChild(healthBar);
-                    app.stage.addChild(genderFlag);
+                    preys[i].addChild(healthBar);
+                    preys[i].addChild(genderFlag);
+                    app.stage.addChild(preys[i]);                   
                 }
 
 
@@ -231,22 +232,22 @@
                     predators[i].ydir = YDIR[getRandomInt(0, 1)];
                     predators[i].energy = PREDATOR_ENERGY;
                     predators[i].mood = LURKING;
-                    predators[i].gender = GENDER[getRandomInt(0,1)];
+                    predators[i].gender = GENDER[getRandomInt(0, 1)];
 
                     var healthBar = new PIXI.Graphics();
                     healthBar.beginFill(0x00BB00);
                     healthBar.lineStyle(1, 0x000000);
-                    healthBar.drawRect(0, 0, spriteLength, 5);
+                    healthBar.drawRect(-25, -40, spriteLength, 5);
                     predators[i].energyBar = healthBar;
-                    
-                    var genderFlag = new PIXI.Sprite(predators[i].gender===MALE?maleTexture:femaleTexture);
-                    genderFlag.x = predators[i].x;
-                    genderFlag.y = predators[i].y;
+
+                    var genderFlag = new PIXI.Sprite(predators[i].gender === MALE ? maleTexture : femaleTexture);
+                    genderFlag.x = -45;
+                    genderFlag.y = -45;
                     predators[i].genderFlag = genderFlag;
 
+                    predators[i].addChild(healthBar);
+                    predators[i].addChild(genderFlag);
                     app.stage.addChild(predators[i]);
-                    app.stage.addChild(healthBar);
-                    app.stage.addChild(genderFlag);
                 }
             }
 
@@ -296,7 +297,7 @@
                         if (preys[i].mood !== DEAD) {
                             preys[i].mood = DEAD;
                             preys[i].texture = deadTexture;
-                            preys[i].energyBar.scale.set(0, 1);
+                            preys[i].removeChild(preys[i].energyBar);
                         }
                         continue;
                     }
@@ -336,8 +337,8 @@
                         preys[i].ydir = newPos.ydir;
                         preys[i].xdir = newPos.xdir;
 
-                        preys[i].energyBar.position.set(preys[i].x - spriteLength / 2, preys[i].y - spriteLength * 0.8);
-                        preys[i].genderFlag.position.set(preys[i].x - spriteLength, preys[i].y - spriteLength );
+                     //   preys[i].energyBar.position.set(preys[i].x - spriteLength / 2, preys[i].y - spriteLength * 0.8);
+                     //   preys[i].genderFlag.position.set(preys[i].x - spriteLength, preys[i].y - spriteLength);
 
                     }
                     //  console.log("Current mood: " + preys[i].mood);
@@ -373,9 +374,10 @@
                     }
                 }
 
+                //Update predators
                 for (var i = 0; i < predatorCount; i++) {
                     predators[i].energyBar.scale.set(predators[i].energy / PREDATOR_ENERGY, 1);
-                    
+
                     if (predators[i].energy <= 0) {
                         if (predators[i].mood !== DEAD) {
                             predators[i].mood = DEAD;
@@ -384,19 +386,16 @@
                         }
                         continue;
                     }
-                    
-                    if(predators[i].mood !== EATING){
+
+                    if (predators[i].mood !== EATING) {
                         predators[i].energy--;
                     }
-
 
                     var newPos = deltaMove(predators[i].xdir, predators[i].ydir, predators[i].x, predators[i].y, PREDATOR_SPEED);
                     predators[i].x = newPos.x;
                     predators[i].y = newPos.y;
                     predators[i].ydir = newPos.ydir;
                     predators[i].xdir = newPos.xdir;
-                    predators[i].energyBar.position.set(predators[i].x - spriteLength / 2, predators[i].y - spriteLength * 0.8);
-                    predators[i].genderFlag.position.set(predators[i].x - spriteLength, predators[i].y - spriteLength );
                 }
             }
 
