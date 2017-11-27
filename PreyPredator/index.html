@@ -115,6 +115,8 @@
             var matingTexture = PIXI.Texture.fromImage(imagesBasePath + 'sleeping.png');
             var femaleTexture = PIXI.Texture.fromImage(imagesBasePath + 'female.png');
             var maleTexture = PIXI.Texture.fromImage(imagesBasePath + 'male.png');
+            var healthBarTexture = PIXI.Texture.fromImage(imagesBasePath + 'healthBar.png');
+            var PREY_MATE_PERIOD = 100;
             var MALE = 0, FEMALE = 1;
             var GENDER = [MALE, FEMALE];
             var NORMAL_HEARTBEAT = 60;
@@ -204,10 +206,13 @@
                     preys[i].gender = GENDER[getRandomInt(0, 1)];
                     preys[i].food = PREY_ENERGY; //when it dies, it provides this amount of food
 
-                    var healthBar = new PIXI.Graphics();
-                    healthBar.beginFill(0x00BB00);
-                    healthBar.lineStyle(1, 0x000000);
-                    healthBar.drawRect(-25, -40, spriteLength, 5);
+                    var healthBar = new PIXI.Sprite(healthBarTexture); //new PIXI.Graphics();
+                    //  healthBar.beginFill(0x00BB00);
+                    // healthBar.lineStyle(1, 0x000000);
+                    // healthBar.drawRect(-25, -40, spriteLength, 5);
+                    healthBar.x = -25;
+                    healthBar.y = -40;
+                    healthBar.tint = 0x00FF00;
                     preys[i].energyBar = healthBar;
 
                     var genderFlag = new PIXI.Sprite(preys[i].gender === MALE ? maleTexture : femaleTexture);
@@ -217,7 +222,7 @@
 
                     preys[i].addChild(healthBar);
                     preys[i].addChild(genderFlag);
-                    app.stage.addChild(preys[i]);                   
+                    app.stage.addChild(preys[i]);
                 }
 
 
@@ -234,10 +239,13 @@
                     predators[i].mood = LURKING;
                     predators[i].gender = GENDER[getRandomInt(0, 1)];
 
-                    var healthBar = new PIXI.Graphics();
-                    healthBar.beginFill(0x00BB00);
-                    healthBar.lineStyle(1, 0x000000);
-                    healthBar.drawRect(-25, -40, spriteLength, 5);
+                    var healthBar = new PIXI.Sprite(healthBarTexture);//new PIXI.Graphics();
+                    healthBar.x = -25;
+                    healthBar.y = -40;
+                    healthBar.tint = 0x00FF00;
+                   // healthBar.beginFill(0x00BB00);
+                   // healthBar.lineStyle(1, 0x000000);
+                   // healthBar.drawRect(-25, -40, spriteLength, 5);
                     predators[i].energyBar = healthBar;
 
                     var genderFlag = new PIXI.Sprite(predators[i].gender === MALE ? maleTexture : femaleTexture);
@@ -291,8 +299,17 @@
             }
 
             function updateLogic() {
+
+                //update preys status
                 for (var i = 0; i < preyCount; i++) {
                     preys[i].energyBar.scale.set(preys[i].energy / PREY_ENERGY, 1);
+                    
+                    if(preys[i].energy <= PREY_ENERGY/2 && preys[i].energy >PREY_ENERGY/4){
+                        preys[i].energyBar.tint = 0xFFA500;
+                    } else if(preys[i].energy <= PREY_ENERGY/4)
+                        preys[i].energyBar.tint = 0xFF0000;
+                    else preys[i].energyBar.tint = 0x00FF00;
+                    
                     if (preys[i].energy <= 0) {
                         if (preys[i].mood !== DEAD) {
                             preys[i].mood = DEAD;
@@ -302,68 +319,50 @@
                         continue;
                     }
 
-                    var predatorNear = isPredatorNear(preys[i].x, preys[i].y);
-                    if (predatorNear) {
-                        //     console.log("Predator near for prey#" + i + ": " + predatorNear.xdir);
-                        preys[i].texture = scaredTexture;
-                        preys[i].mood = SCARED;
-                        preys[i].ydir = predatorNear.ydir;
-                        preys[i].xdir = predatorNear.xdir;
-                        preys[i].heartBeat = NORMAL_HEARTBEAT * 3;
-                    } else {
-                        if (preys[i].mood === SCARED || preys[i].mood === WORRIED) {
-                            if (preys[i].heartBeat <= NORMAL_HEARTBEAT) {
-                                //   console.log("Not scared anymore. It should be happy NOW!");
-                                preys[i].texture = happyTexture;
-                                preys[i].mood = HAPPY;
-                            } else if (preys[i].heartBeat < NORMAL_HEARTBEAT * 2 && preys[i].mood === SCARED) {
-                                //     console.log("No predator near but still scared");
-                                preys[i].texture = worriedTexture;
-                                preys[i].mood = WORRIED;
-                                preys[i].heartBeat--;
-                            } else {
-                                preys[i].energy -= 2;//energy decreses x2 when scared
-                                //  preys[i].energyBar.scale.set(preys[i].energy / PREY_ENERGY, 1);
-                                preys[i].heartBeat--;
-
-                            }
-                        }
-                    }
-
                     if (preys[i].mood === HAPPY || preys[i].mood === SCARED || preys[i].mood === WORRIED) {
                         var newPos = deltaMove(preys[i].xdir, preys[i].ydir, preys[i].x, preys[i].y, PREY_SPEED);
                         preys[i].x = newPos.x;
                         preys[i].y = newPos.y;
                         preys[i].ydir = newPos.ydir;
                         preys[i].xdir = newPos.xdir;
-
-                     //   preys[i].energyBar.position.set(preys[i].x - spriteLength / 2, preys[i].y - spriteLength * 0.8);
-                     //   preys[i].genderFlag.position.set(preys[i].x - spriteLength, preys[i].y - spriteLength);
-
                     }
-                    //  console.log("Current mood: " + preys[i].mood);
+
+                    var predatorNear = isPredatorNear(preys[i].x, preys[i].y);
+                    if (predatorNear) {
+                        preys[i].texture = scaredTexture;
+                        preys[i].mood = SCARED;
+                        preys[i].ydir = predatorNear.ydir;
+                        preys[i].xdir = predatorNear.xdir;
+                        preys[i].heartBeat = NORMAL_HEARTBEAT * 3;
+                    }
+
+                    if (preys[i].mood === SCARED || preys[i].mood === WORRIED) {
+                        if (preys[i].heartBeat <= NORMAL_HEARTBEAT) {
+                            preys[i].texture = happyTexture;
+                            preys[i].mood = HAPPY;
+                        } else if (preys[i].heartBeat < NORMAL_HEARTBEAT * 2 && preys[i].mood === SCARED) {
+                            preys[i].texture = worriedTexture;
+                            preys[i].mood = WORRIED;
+                            preys[i].heartBeat--;
+                        } else {
+                            preys[i].energy -= 2;//energy decreses x2 when scared
+                            preys[i].heartBeat--;
+                        }
+                    }
+
                     if (preys[i].mood === SCARED || preys[i].mood === WORRIED)
-                    {
-
-
                         continue;
-                    }
-
 
                     if (preys[i].mood === EATING) {
                         if (preys[i].energy <= PREY_ENERGY)
                             preys[i].energy++;
-                        //   preys[i].energyBar.scale.set(preys[i].energy / PREY_ENERGY, 1);
-
-                        if (preys[i].energy >= PREY_ENERGY) {
+                        else {
                             preys[i].mood = HAPPY;
                             preys[i].texture = happyTexture;
                         }
                     }
                     if (preys[i].mood !== EATING) {
-                        //       console.log("evaluating if it should eat");
                         preys[i].energy--;
-                        //   preys[i].energyBar.scale.set(preys[i].energy / PREY_ENERGY, 1);
                         var foodDir = isFoodNear(preys[i].x, preys[i].y);
                         if (foodDir && preys[i].energy <= PREY_ENERGY * EAT_THRESHOLD) {
                             preys[i].mood = EATING;
@@ -377,6 +376,11 @@
                 //Update predators
                 for (var i = 0; i < predatorCount; i++) {
                     predators[i].energyBar.scale.set(predators[i].energy / PREDATOR_ENERGY, 1);
+                    if(predators[i].energy <= PREDATOR_ENERGY/2 && predators[i].energy >PREDATOR_ENERGY/4){
+                        predators[i].energyBar.tint = 0xFFA500;
+                    } else if(predators[i].energy <= PREDATOR_ENERGY/4)
+                        predators[i].energyBar.tint = 0xFF0000;
+                    else predators[i].energyBar.tint = 0x00FF00;
 
                     if (predators[i].energy <= 0) {
                         if (predators[i].mood !== DEAD) {
