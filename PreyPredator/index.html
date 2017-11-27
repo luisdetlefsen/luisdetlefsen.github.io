@@ -55,6 +55,27 @@
                 <label for="eatThreshold">Eat when energy is below</label>
                 <input class="form-control" id='eatThreshold' type="number" value="0.8" step="0.1" min="0" />
             </div>
+
+        </div>
+
+        <div class='row'>
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                <label for="preyMateDistance">Distance to detect prey of another gender</label>
+                <input class="form-control" id='preyMateDistance' type="number" value="40" step="1" min="0" />
+            </div>
+
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                <div class="form-check">
+                    <label class="form-check-label">
+                        <input class="form-check-input" type="checkbox" value="" id='inDebug'>
+                        Display debug information
+                    </label>
+                </div>
+            </div>
+
+        </div>
+
+        <div class='row'>
             <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                 <button type="submit" class="btn btn-primary" id="btnStart" onclick="start()">Start</button>
             </div>
@@ -62,6 +83,8 @@
                 <button type="submit" class="btn btn-danger" id="btnStop" onclick='stop()'>Stop</button>                
             </div>
         </div>
+
+
         <div class="row">
 
             <div id="container" style="margin:10px;"></div>
@@ -83,6 +106,7 @@
              TODO: prey should mate with another prey of different sex
              prey should die if it runs out of energy
              TODO: predator should chase a prey when it is near
+             TODO: prey should have a priority: mate or eat
              predator should have energy
              TODO: predator should seek another predator to mate
              TODO: predator should increase its energy when it eats a prey
@@ -116,6 +140,7 @@
             var femaleTexture = PIXI.Texture.fromImage(imagesBasePath + 'female.png');
             var maleTexture = PIXI.Texture.fromImage(imagesBasePath + 'male.png');
             var healthBarTexture = PIXI.Texture.fromImage(imagesBasePath + 'healthBar.png');
+            var DISTANCE_PREY_MATE = 40; //distance to detect and chase a prey of opposite gender
             var PREY_MATE_PERIOD = 100;
             var MALE = 0, FEMALE = 1;
             var GENDER = [MALE, FEMALE];
@@ -133,6 +158,8 @@
             var preys = [];
             var predators = [];
 
+            var debug = true;
+
             function loadSettings() {
                 preyCount = parseInt(document.getElementById('preyAmount').value);
                 PREY_SPEED = parseInt(document.getElementById('preySpeed').value);
@@ -142,6 +169,8 @@
                 DISTACE_TO_PREDATOR = parseInt(document.getElementById('distancePredator').value);
                 DISTANCE_TO_DETECT_FOOD = parseInt(document.getElementById('distanceFood').value);
                 EAT_THRESHOLD = parseFloat(document.getElementById('eatThreshold').value);
+                DISTANCE_PREY_MATE = parseInt(document.getElementById('preyMateDistance').value);
+                debug = document.getElementById('inDebug').checked? true:false;
                 food = [];
                 preys = [];
                 predators = [];
@@ -220,6 +249,24 @@
                     genderFlag.y = -45;
                     preys[i].genderFlag = genderFlag;
 
+                    if (debug) {
+                        var foodLOS = new PIXI.Graphics();
+                        foodLOS.lineStyle(2, 0xFFFFFF);
+                        foodLOS.drawCircle(0, 0, DISTANCE_TO_DETECT_FOOD);
+                        preys[i].addChild(foodLOS);
+
+                        var enemyLOS = new PIXI.Graphics();
+                        enemyLOS.lineStyle(2, 0xFF0000);
+                        enemyLOS.drawCircle(0, 0, DISTACE_TO_PREDATOR);
+                        preys[i].addChild(enemyLOS);
+
+                        var mateLOS = new PIXI.Graphics();
+                        mateLOS.lineStyle(2, 0x800080);
+                        mateLOS.drawCircle(0, 0, DISTANCE_PREY_MATE);
+                        preys[i].addChild(mateLOS);
+
+                    }
+
                     preys[i].addChild(healthBar);
                     preys[i].addChild(genderFlag);
                     app.stage.addChild(preys[i]);
@@ -243,9 +290,9 @@
                     healthBar.x = -25;
                     healthBar.y = -40;
                     healthBar.tint = 0x00FF00;
-                   // healthBar.beginFill(0x00BB00);
-                   // healthBar.lineStyle(1, 0x000000);
-                   // healthBar.drawRect(-25, -40, spriteLength, 5);
+                    // healthBar.beginFill(0x00BB00);
+                    // healthBar.lineStyle(1, 0x000000);
+                    // healthBar.drawRect(-25, -40, spriteLength, 5);
                     predators[i].energyBar = healthBar;
 
                     var genderFlag = new PIXI.Sprite(predators[i].gender === MALE ? maleTexture : femaleTexture);
@@ -259,19 +306,95 @@
                 }
             }
 
+            function isPreyMateNear(x, y) {
+                var threshold = DISTANCE_PREY_MATE;
+                var mateDir = {xdir: null, ydir: null};
+                for (var i = 0; i < preyCount; i++) {
+                    if (Math.abs(preys[i].x - x) < threshold && Math.abs(preys[i].y - y) < threshold) {
+                        if (preys[i].x < x)
+                            mateDir.xdir = LEFT;
+                        else //if(preys[i].x > x)
+                            mateDir.xdir = RIGHT;
+                        if (preys[i].y < y)
+                            mateDir.ydir = DOWN;
+                        else
+                            mateDir.ydir = UP;
+                        return mateDir;
+                    }
+                }
+            }
+
+            function hitTestRectangle(r1, r2) {
+
+                //Define the variables we'll need to calculate
+                var hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
+
+                //hit will determine whether there's a collision
+                hit = false;
+
+                //Find the center points of each sprite
+                r1.centerX = r1.x + r1.width / 2;
+                r1.centerY = r1.y + r1.height / 2;
+                r2.centerX = r2.x + r2.width / 2;
+                r2.centerY = r2.y + r2.height / 2;
+
+                //Find the half-widths and half-heights of each sprite
+                r1.halfWidth = r1.width / 2;
+                r1.halfHeight = r1.height / 2;
+                r2.halfWidth = r2.width / 2;
+                r2.halfHeight = r2.height / 2;
+
+                //Calculate the distance vector between the sprites
+                vx = r1.centerX - r2.centerX;
+                vy = r1.centerY - r2.centerY;
+
+                //Figure out the combined half-widths and half-heights
+                combinedHalfWidths = r1.halfWidth + r2.halfWidth;
+                combinedHalfHeights = r1.halfHeight + r2.halfHeight;
+
+                //Check for a collision on the x axis
+                if (Math.abs(vx) < combinedHalfWidths) {
+
+                    //A collision might be occuring. Check for a collision on the y axis
+                    if (Math.abs(vy) < combinedHalfHeights) {
+
+                        //There's definitely a collision happening
+                        hit = true;
+                    } else {
+
+                        //There's no collision on the y axis
+                        hit = false;
+                    }
+                } else {
+
+                    //There's no collision on the x axis
+                    hit = false;
+                }
+
+                //`hit` will be either `true` or `false`
+                return hit;
+            }
+
+            function foodFound(p) {
+                for (var i = 0; i < foodCount; i++) {
+                    if (hitTestRectangle(p, food[i]))
+                        return food[i];
+                }
+                return false;
+            }
             function isFoodNear(x, y) {
                 var threshold = DISTANCE_TO_DETECT_FOOD;
                 var foodDir = {xdir: null, ydir: null};
                 for (var i = 0; i < foodCount; i++) {
                     if (Math.abs(food[i].x - x) < threshold && Math.abs(food[i].y - y) < threshold) {
-                        if (food[i].x <= x)
+                        if (x >= food[i].x)
                             foodDir.xdir = LEFT;
                         else
                             foodDir.xdir = RIGHT;
                         if (food[i].y <= y)
-                            foodDir.ydir = DOWN;
-                        else
                             foodDir.ydir = UP;
+                        else
+                            foodDir.ydir = DOWN;
                         return foodDir;
                     }
                 }
@@ -302,14 +425,17 @@
 
                 //update preys status
                 for (var i = 0; i < preyCount; i++) {
+
+                    //update energy bar scale and color
                     preys[i].energyBar.scale.set(preys[i].energy / PREY_ENERGY, 1);
-                    
-                    if(preys[i].energy <= PREY_ENERGY/2 && preys[i].energy >PREY_ENERGY/4){
+                    if (preys[i].energy <= PREY_ENERGY / 2 && preys[i].energy > PREY_ENERGY / 4) {
                         preys[i].energyBar.tint = 0xFFA500;
-                    } else if(preys[i].energy <= PREY_ENERGY/4)
+                    } else if (preys[i].energy <= PREY_ENERGY / 4)
                         preys[i].energyBar.tint = 0xFF0000;
-                    else preys[i].energyBar.tint = 0x00FF00;
-                    
+                    else
+                        preys[i].energyBar.tint = 0x00FF00;
+
+                    //evaluate if prey is dead
                     if (preys[i].energy <= 0) {
                         if (preys[i].mood !== DEAD) {
                             preys[i].mood = DEAD;
@@ -319,6 +445,7 @@
                         continue;
                     }
 
+                    //move only if it is happy, scared, or worried
                     if (preys[i].mood === HAPPY || preys[i].mood === SCARED || preys[i].mood === WORRIED) {
                         var newPos = deltaMove(preys[i].xdir, preys[i].ydir, preys[i].x, preys[i].y, PREY_SPEED);
                         preys[i].x = newPos.x;
@@ -327,6 +454,7 @@
                         preys[i].xdir = newPos.xdir;
                     }
 
+                    //evaluate if predator is near. If true, change mood, heartbeat, and direction
                     var predatorNear = isPredatorNear(preys[i].x, preys[i].y);
                     if (predatorNear) {
                         preys[i].texture = scaredTexture;
@@ -336,6 +464,10 @@
                         preys[i].heartBeat = NORMAL_HEARTBEAT * 3;
                     }
 
+                    //update the prey's heartbeat when it is running away from a predator. 
+                    //if heartbeat is normal, then change the mood to happy. 
+                    //if heartbeat less than twice as normal, then change mood to worried
+                    //if heearteat continues to be more than twice than normal, then consume more energy
                     if (preys[i].mood === SCARED || preys[i].mood === WORRIED) {
                         if (preys[i].heartBeat <= NORMAL_HEARTBEAT) {
                             preys[i].texture = happyTexture;
@@ -350,9 +482,14 @@
                         }
                     }
 
+                    if (preys[i].mood !== EATING)
+                        preys[i].energy--;
+
+                    //if prey is running away from a predator it cannot perform the other activities
                     if (preys[i].mood === SCARED || preys[i].mood === WORRIED)
                         continue;
 
+                    //increase energy if it is eating. Change to happy mood if it has full energy
                     if (preys[i].mood === EATING) {
                         if (preys[i].energy <= PREY_ENERGY)
                             preys[i].energy++;
@@ -360,27 +497,44 @@
                             preys[i].mood = HAPPY;
                             preys[i].texture = happyTexture;
                         }
+                        continue;
                     }
-                    if (preys[i].mood !== EATING) {
-                        preys[i].energy--;
-                        var foodDir = isFoodNear(preys[i].x, preys[i].y);
-                        if (foodDir && preys[i].energy <= PREY_ENERGY * EAT_THRESHOLD) {
-                            preys[i].mood = EATING;
-                            preys[i].texture = eatingTexture;
-                            preys[i].ydir = foodDir.ydir;
-                            preys[i].xdir = foodDir.xdir;
-                        }
+
+                    //  if (preys[i].mood !== EATING) {                 
+
+                    //evaluate if there is another prey nearby to reproduce
+                    var mateDir = isPreyMateNear(preys[i].x, preys[i].y);
+                    if (mateDir && preys[i].energy >= PREY_ENERGY / 4) {
+
                     }
+
+                    //evaluate if there is food near and get closer to it
+                    var foodDir = isFoodNear(preys[i].x, preys[i].y);
+                    if (foodDir && preys[i].energy <= PREY_ENERGY * EAT_THRESHOLD) {
+                        //  preys[i].mood = EATING;
+                        //  preys[i].texture = eatingTexture;
+                        preys[i].ydir = foodDir.ydir;
+                        preys[i].xdir = foodDir.xdir;
+                    }
+
+                    if (foodFound(preys[i])) {
+                        preys[i].mood = EATING;
+                        preys[i].texture = eatingTexture;
+                    }
+
+
+                    //     }
                 }
 
                 //Update predators
                 for (var i = 0; i < predatorCount; i++) {
                     predators[i].energyBar.scale.set(predators[i].energy / PREDATOR_ENERGY, 1);
-                    if(predators[i].energy <= PREDATOR_ENERGY/2 && predators[i].energy >PREDATOR_ENERGY/4){
+                    if (predators[i].energy <= PREDATOR_ENERGY / 2 && predators[i].energy > PREDATOR_ENERGY / 4) {
                         predators[i].energyBar.tint = 0xFFA500;
-                    } else if(predators[i].energy <= PREDATOR_ENERGY/4)
+                    } else if (predators[i].energy <= PREDATOR_ENERGY / 4)
                         predators[i].energyBar.tint = 0xFF0000;
-                    else predators[i].energyBar.tint = 0x00FF00;
+                    else
+                        predators[i].energyBar.tint = 0x00FF00;
 
                     if (predators[i].energy <= 0) {
                         if (predators[i].mood !== DEAD) {
