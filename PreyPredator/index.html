@@ -63,6 +63,11 @@
                 <label for="preyMateDistance">Distance to detect prey of another gender</label>
                 <input class="form-control" id='preyMateDistance' type="number" value="40" step="1" min="0" />
             </div>
+            
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+                <label for="preyMateThreshold">Prey will reproduce when energy is above</label>
+                <input class="form-control" id='preyMateThreshold' type="number" value="0.4" step="0.1" min="0" />
+            </div>
 
             <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                 <div class="form-check">
@@ -102,9 +107,10 @@
              prey should run towards food
              prey should eat only when energy is below a certain threshold
              TODO: prey should die if it gets in contact with a predator
-             TODO: prey should seek another prey to mate
+             prey should seek another prey to mate
              prey should have a gender
-             TODO: prey should mate with another prey of different sex
+             prey should mate with another prey of different sex
+    TODO: prey mating act should have a duration
              prey should die if it runs out of energy
              TODO: predator should chase a prey when it is near
              TODO: prey should have a priority: mate or eat
@@ -117,6 +123,7 @@
              predator should die if it runs out of energy
              TODO: food should have an amount that can be eaten
              TODO: food should spawn randomly every X time
+            TODO: add urge to mate to prey and predator
              */
 
             var windowWidth = window.innerWidth * 0.95;
@@ -153,9 +160,11 @@
             var running = false;
             var PREY_SPEED = 5, PREDATOR_SPEED = 3;
             var predatorCount = 3, preyCount = 5, foodCount = 5;
+            var PREY_MATE_ENERGY_THRESHOLD = 0.4;
             var EAT_THRESHOLD = 0.8;
             var food = [];
             var spriteLength = 50;
+            var preyIdSeq = 0;
             var preys = [];
             var predators = [];
 
@@ -172,9 +181,14 @@
                 EAT_THRESHOLD = parseFloat(document.getElementById('eatThreshold').value);
                 DISTANCE_PREY_MATE = parseInt(document.getElementById('preyMateDistance').value);
                 debug = document.getElementById('inDebug').checked ? true : false;
+                PREY_MATE_ENERGY_THRESHOLD = parseFloat(document.getElementById('preyMateThreshold').value);
                 food = [];
                 preys = [];
                 predators = [];
+            }
+
+            function getNextPreyId() {
+                return "prey" + preyIdSeq++;
             }
 
             function getRandomInt(min, max) {
@@ -225,6 +239,7 @@
                 //Preys
                 for (var i = 0; i < preyCount; i++) {
                     preys.push(new PIXI.Sprite(happyTexture));
+                    preys[i].id = getNextPreyId();
                     preys[i].anchor.set(0.5);
                     preys[i].x = getRandomInt(spriteLength, (window.innerWidth / 2) - spriteLength);
                     preys[i].y = getRandomInt(spriteLength, app.renderer.height - spriteLength);
@@ -307,22 +322,31 @@
                 }
             }
 
-            function isPreyMateNear(x, y) {
+            function isPreyMateNear(x, y, gender, id) {
                 var threshold = DISTANCE_PREY_MATE;
                 var mateDir = {xdir: null, ydir: null};
                 for (var i = 0; i < preyCount; i++) {
+                    if (gender === preys[i].gender) //do not allow same gender sex
+                        continue;
+                    if (preys[i].id === id)
+                        continue;
+                    if(preys[i].mood === MATING)
+                        continue;
+                    if(preys[i].energy <= 0)
+                        continue;
                     if (Math.abs(preys[i].x - x) < threshold && Math.abs(preys[i].y - y) < threshold) {
                         if (preys[i].x < x)
                             mateDir.xdir = LEFT;
                         else //if(preys[i].x > x)
                             mateDir.xdir = RIGHT;
                         if (preys[i].y < y)
-                            mateDir.ydir = DOWN;
-                        else
                             mateDir.ydir = UP;
+                        else
+                            mateDir.ydir = DOWN;
                         return mateDir;
                     }
                 }
+                return false;
             }
 
             function hitTestRectangle(r1, r2) {
@@ -376,6 +400,20 @@
                 return hit;
             }
 
+            function matePreyFound(m) {
+                for (var i = 0; i < preyCount; i++) {
+                    if(m.id === preys[i].id)
+                        continue;
+                    if(m.gender === preys[i].gender)
+                        continue;
+                    if(preys[i].mood === MATING)
+                        continue;
+                    if (preys[i].energy > 0 && hitTestRectangle(m, preys[i])) //do not mate with dead preys
+                        return preys[i];
+                }
+                return false;
+            }
+
             function foodFound(p) {
                 for (var i = 0; i < foodCount; i++) {
                     if (hitTestRectangle(p, food[i]))
@@ -427,15 +465,6 @@
                 //update preys status
                 for (var i = 0; i < preyCount; i++) {
 
-                    //update energy bar scale and color
-                    preys[i].energyBar.scale.set(preys[i].energy / MAX_PREY_ENERGY, 1);
-                    if (preys[i].energy <= MAX_PREY_ENERGY / 2 && preys[i].energy > MAX_PREY_ENERGY / 4) {
-                        preys[i].energyBar.tint = 0xFFA500;
-                    } else if (preys[i].energy <= MAX_PREY_ENERGY / 4)
-                        preys[i].energyBar.tint = 0xFF0000;
-                    else
-                        preys[i].energyBar.tint = 0x00FF00;
-
                     //evaluate if prey is dead
                     if (preys[i].energy <= 0) {
                         if (preys[i].mood !== DEAD) {
@@ -445,6 +474,15 @@
                         }
                         continue;
                     }
+
+                    //update energy bar scale and color
+                    preys[i].energyBar.scale.set(preys[i].energy / MAX_PREY_ENERGY, 1);
+                    if (preys[i].energy <= MAX_PREY_ENERGY / 2 && preys[i].energy > MAX_PREY_ENERGY / 4) {
+                        preys[i].energyBar.tint = 0xFFA500;
+                    } else if (preys[i].energy <= MAX_PREY_ENERGY / 4)
+                        preys[i].energyBar.tint = 0xFF0000;
+                    else
+                        preys[i].energyBar.tint = 0x00FF00;
 
                     //move only if it is happy, scared, or worried
                     if (preys[i].mood === HAPPY || preys[i].mood === SCARED || preys[i].mood === WORRIED) {
@@ -503,15 +541,31 @@
 
                     //  if (preys[i].mood !== EATING) {                 
 
-                    //evaluate if there is another prey nearby to reproduce
-                    var mateDir = isPreyMateNear(preys[i].x, preys[i].y);
-                    if (mateDir && preys[i].energy >= MAX_PREY_ENERGY / 4) {
 
+                    //reproduce only if it has enough energy
+                    if (preys[i].mood !== MATING && preys[i].energy >= MAX_PREY_ENERGY * PREY_MATE_ENERGY_THRESHOLD) {
+
+                        //get closer to another prey of different sex
+                        var mateDir = isPreyMateNear(preys[i].x, preys[i].y, preys[i].gender, preys[i].id);
+                        if (mateDir) {
+                            console.log("mate near");
+                            preys[i].ydir = mateDir.ydir;
+                            preys[i].xdir = mateDir.xdir;
+                            //reproduce if found partner
+                            var mate = matePreyFound(preys[i]);
+                            if (mate) { 
+                                preys[i].mood = MATING;
+                                preys[i].texture = matingTexture;
+                                mate.mood = MATING;
+                                mate.texture = matingTexture;
+                            }
+                        }
                     }
 
+
                     //evaluate if it needs to eat
-                    if (preys[i].energy <= (MAX_PREY_ENERGY * EAT_THRESHOLD)) {
-                        
+                    if (preys[i].mood !== EATING && preys[i].energy <= (MAX_PREY_ENERGY * EAT_THRESHOLD)) {
+
                         //get closer to the food
                         var foodDir = isFoodNear(preys[i].x, preys[i].y);
                         if (foodDir) {
@@ -519,12 +573,11 @@
                             //  preys[i].texture = eatingTexture;
                             preys[i].ydir = foodDir.ydir;
                             preys[i].xdir = foodDir.xdir;
-                        }
-
-                        if (foodFound(preys[i]) && preys[i].mood !== EATING) {
-                            console.log('food found');
-                            preys[i].mood = EATING;
-                            preys[i].texture = eatingTexture;
+                            //eat if found food
+                            if (foodFound(preys[i])) {
+                                preys[i].mood = EATING;
+                                preys[i].texture = eatingTexture;
+                            }
                         }
                     }
 
@@ -572,12 +625,14 @@
             function stop() {
                 app.ticker.remove(update);
                 running = false;
-                recycleWorld();
+                // recycleWorld();
             }
 
             function start() {
+                recycleWorld();
                 if (running)
                     stop();
+
                 loadSettings();
                 fillWorld();
                 app.ticker.add(update);
