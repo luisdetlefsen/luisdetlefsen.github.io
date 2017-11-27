@@ -118,14 +118,14 @@
              prey should mate with another prey of different sex
              prey mating act should have a duration
              prey should die if it runs out of energy
-             TODO: predator should chase a prey when it is near
+             predator should chase a prey when it is near
              TODO: prey should have a priority: mate or eat
              predator should have energy
              TODO: predator should seek another predator to mate
              TODO: predator should increase its energy when it eats a prey
              predator should decrease its energy when it is not eating
              predator should have a gender
-             TODO: predator should mate with another predator of different sex
+             TODO: predator should mate with another predator of different gender
              predator should die if it runs out of energy
              TODO: food should have an amount that can be eaten
              TODO: food should spawn randomly every X time
@@ -163,8 +163,10 @@
             var NORMAL_HEARTBEAT = 60;
             var DISTACE_TO_PREDATOR = 50;
             var DISTANCE_TO_DETECT_FOOD = 30;
+            var DISTANCE_TO_DETECT_PREY = 250;
             var MAX_PREY_ENERGY = 1000;
-            var PREDATOR_ENERGY = 4000;
+            var MAX_PREDATOR_ENERGY = 4000;
+            var PREDATOR_EAT_THRESHOLD = 0.95;
             var running = false;
             var PREY_SPEED = 5, PREDATOR_SPEED = 3;
             var predatorCount = 3, preyCount = 5, foodCount = 5;
@@ -315,7 +317,7 @@
                 preys.push(prey);
                 app.stage.addChild(prey);
             }
-            
+
             function createPredator(x, y) {
                 var predator = new PIXI.Sprite(angryTexture);
                 predator.id = getNextPredatorId();
@@ -324,7 +326,7 @@
                 predator.y = y ? y : getRandomInt(spriteLength, app.renderer.height - spriteLength);
                 predator.xdir = XDIR[getRandomInt(0, 1)];
                 predator.ydir = YDIR[getRandomInt(0, 1)];
-                predator.energy = PREDATOR_ENERGY;
+                predator.energy = MAX_PREDATOR_ENERGY;
                 predator.mood = LURKING;
                 predator.gender = GENDER[getRandomInt(0, 1)];
 
@@ -346,13 +348,13 @@
                 predator.addChild(genderFlag);
                 return predator;
             }
-            
+
             function addPredatorToWorld(x, y) {
                 var predator = createPredator(x, y);
                 predators.push(predator);
                 app.stage.addChild(predator);
             }
-            
+
             function fillWorld() {
                 app = new PIXI.Application(windowWidth, windowHeight, {backgroundColor: 0x1099bb});
                 document.getElementById('container').appendChild(app.view);
@@ -496,10 +498,31 @@
                 return null;
             }
 
+            function isPreyNear(x, y) {
+                var threshold = DISTANCE_TO_DETECT_PREY;
+                var foodDir = {xdir: null, ydir: null};
+                for (var i = 0; i < preys.length; i++) {
+                    if (preys[i].energy <= 0)
+                        continue;
+                    if (Math.abs(preys[i].x - x) < threshold && Math.abs(preys[i].y - y) < threshold) {
+                        if (x >= preys[i].x)
+                            foodDir.xdir = LEFT;
+                        else
+                            foodDir.xdir = RIGHT;
+                        if (preys[i].y <= y)
+                            foodDir.ydir = UP;
+                        else
+                            foodDir.ydir = DOWN;
+                        return foodDir;
+                    }
+                }
+                return null;
+            }
+
             function isPredatorNear(x, y) {
                 var threshold = DISTACE_TO_PREDATOR;
                 var runDir = {xdir: null, ydir: null};
-                for (var i = 0; i < predatorCount; i++) {
+                for (var i = 0; i < predators.length; i++) {
                     if (Math.abs(predators[i].x - x) < threshold && Math.abs(predators[i].y - y) < threshold) {
                         if (predators[i].x <= x)
                             runDir.xdir = RIGHT;
@@ -658,10 +681,10 @@
 
                 //Update predators
                 for (var i = 0; i < predators.length; i++) {
-                    predators[i].energyBar.scale.set(predators[i].energy / PREDATOR_ENERGY, 1);
-                    if (predators[i].energy <= PREDATOR_ENERGY / 2 && predators[i].energy > PREDATOR_ENERGY / 4) {
+                    predators[i].energyBar.scale.set(predators[i].energy / MAX_PREDATOR_ENERGY, 1);
+                    if (predators[i].energy <= MAX_PREDATOR_ENERGY / 2 && predators[i].energy > MAX_PREDATOR_ENERGY / 4) {
                         predators[i].energyBar.tint = 0xFFA500;
-                    } else if (predators[i].energy <= PREDATOR_ENERGY / 4)
+                    } else if (predators[i].energy <= MAX_PREDATOR_ENERGY / 4)
                         predators[i].energyBar.tint = 0xFF0000;
                     else
                         predators[i].energyBar.tint = 0x00FF00;
@@ -684,6 +707,25 @@
                     predators[i].y = newPos.y;
                     predators[i].ydir = newPos.ydir;
                     predators[i].xdir = newPos.xdir;
+
+
+                    if (predators[i].mood !== EATING && predators[i].energy <= (MAX_PREDATOR_ENERGY * PREDATOR_EAT_THRESHOLD)) {
+                        //get closer to the food
+                        var foodDir = isPreyNear(predators[i].x, predators[i].y);
+                        if (foodDir) {
+                            //  preys[i].mood = EATING;
+                            //  preys[i].texture = eatingTexture;
+                            predators[i].ydir = foodDir.ydir;
+                            predators[i].xdir = foodDir.xdir;
+                            //eat if found food
+                            //   if (foodFound(preys[i])) {
+                            //       preys[i].mood = EATING;
+                            //        preys[i].texture = eatingTexture;
+                            //    }
+                        }
+                    }
+
+
                 }
             }
 
@@ -699,7 +741,7 @@
             }
 
             function start() {
-                
+
                 recycleWorld();
                 if (running)
                     stop();
