@@ -63,7 +63,7 @@
                 <label for="preyMateDistance">Distance to detect prey of another gender</label>
                 <input class="form-control" id='preyMateDistance' type="number" value="40" step="1" min="0" />
             </div>
-            
+
             <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                 <label for="preyMateThreshold">Prey will reproduce when energy is above</label>
                 <input class="form-control" id='preyMateThreshold' type="number" value="0.4" step="0.1" min="0" />
@@ -110,7 +110,7 @@
              prey should seek another prey to mate
              prey should have a gender
              prey should mate with another prey of different sex
-    TODO: prey mating act should have a duration
+             prey mating act should have a duration
              prey should die if it runs out of energy
              TODO: predator should chase a prey when it is near
              TODO: prey should have a priority: mate or eat
@@ -123,7 +123,8 @@
              predator should die if it runs out of energy
              TODO: food should have an amount that can be eaten
              TODO: food should spawn randomly every X time
-            TODO: add urge to mate to prey and predator
+             add urge to mate to prey 
+             TODO; add urge to mate to predator
              */
 
             var windowWidth = window.innerWidth * 0.95;
@@ -147,7 +148,8 @@
             var matingTexture = PIXI.Texture.fromImage(imagesBasePath + 'sleeping.png');
             var femaleTexture = PIXI.Texture.fromImage(imagesBasePath + 'female.png');
             var maleTexture = PIXI.Texture.fromImage(imagesBasePath + 'male.png');
-            var healthBarTexture = PIXI.Texture.fromImage(imagesBasePath + 'healthBar.png');
+            var healthBarTexture = PIXI.Texture.fromImage(imagesBasePath + 'solidWhiteBar.png');
+            var transparentBarTexture = PIXI.Texture.fromImage(imagesBasePath + 'transparentBar.png');
             var DISTANCE_PREY_MATE = 40; //distance to detect and chase a prey of opposite gender
             var PREY_MATE_PERIOD = 100;
             var MALE = 0, FEMALE = 1;
@@ -162,6 +164,9 @@
             var predatorCount = 3, preyCount = 5, foodCount = 5;
             var PREY_MATE_ENERGY_THRESHOLD = 0.4;
             var EAT_THRESHOLD = 0.8;
+            var PREY_MATING_DURATION = 100;
+            var PREY_MATE_SPAN = 1000;
+
             var food = [];
             var spriteLength = 50;
             var preyIdSeq = 0;
@@ -223,6 +228,82 @@
                     container.removeChild(container.firstChild);
             }
 
+
+            function createPrey(x, y) {
+                var prey = new PIXI.Sprite(happyTexture);
+                prey.id = getNextPreyId();
+                prey.anchor.set(0.5);
+                prey.x = x ? x : getRandomInt(spriteLength, (window.innerWidth / 2) - spriteLength);
+                prey.y = y ? y : getRandomInt(spriteLength, app.renderer.height - spriteLength);
+                prey.xdir = XDIR[getRandomInt(0, 1)];
+                prey.ydir = YDIR[getRandomInt(0, 1)];
+                prey.mood = HAPPY;
+                prey.heartBeat = NORMAL_HEARTBEAT;
+                prey.energy = MAX_PREY_ENERGY;
+                prey.gender = GENDER[getRandomInt(0, 1)];
+                prey.matingDuration = 0;
+                prey.mateSpan = 0;
+                prey.food = MAX_PREY_ENERGY; //when it dies, it provides this amount of food
+                prey.mates = [];
+
+                var baseHealthBar = new PIXI.Sprite(transparentBarTexture);
+                baseHealthBar.x = -25;
+                baseHealthBar.y = -40;
+
+                var healthBar = new PIXI.Sprite(healthBarTexture); //new PIXI.Graphics();
+                //  healthBar.beginFill(0x00BB00);
+                // healthBar.lineStyle(1, 0x000000);
+                // healthBar.drawRect(-25, -40, spriteLength, 5);
+                healthBar.x = -25;
+                healthBar.y = -40;
+                healthBar.tint = 0x00FF00;
+                prey.energyBar = healthBar;
+
+                var genderFlag = new PIXI.Sprite(prey.gender === MALE ? maleTexture : femaleTexture);
+                genderFlag.x = -45;
+                genderFlag.y = -45;
+                prey.genderFlag = genderFlag;
+
+                var baseMateBar = new PIXI.Sprite(transparentBarTexture);
+                baseMateBar.x = -25;
+                baseMateBar.y = -50;
+
+                var mateBar = new PIXI.Sprite(healthBarTexture);
+                mateBar.x = -25;
+                mateBar.y = -50;
+                mateBar.tint = 0xAAAA00;
+                prey.mateBar = mateBar;
+
+                if (debug) {
+                    var foodLOS = new PIXI.Graphics();
+                    foodLOS.lineStyle(2, 0xFFFFFF);
+                    foodLOS.drawCircle(0, 0, DISTANCE_TO_DETECT_FOOD);
+                    prey.addChild(foodLOS);
+
+                    var enemyLOS = new PIXI.Graphics();
+                    enemyLOS.lineStyle(2, 0xFF0000);
+                    enemyLOS.drawCircle(0, 0, DISTACE_TO_PREDATOR);
+                    prey.addChild(enemyLOS);
+
+                    var mateLOS = new PIXI.Graphics();
+                    mateLOS.lineStyle(2, 0x800080);
+                    mateLOS.drawCircle(0, 0, DISTANCE_PREY_MATE);
+                    prey.addChild(mateLOS);
+
+                }
+                prey.addChild(baseHealthBar);
+                prey.addChild(baseMateBar);
+                prey.addChild(mateBar);
+                prey.addChild(healthBar);
+                prey.addChild(genderFlag);
+                return prey;
+            }
+
+            function addPreyToWorld(x, y) {
+                var prey = createPrey(x, y);
+                preys.push(prey);
+                app.stage.addChild(prey);
+            }
             function fillWorld() {
                 app = new PIXI.Application(windowWidth, windowHeight, {backgroundColor: 0x1099bb});
                 document.getElementById('container').appendChild(app.view);
@@ -238,54 +319,77 @@
 
                 //Preys
                 for (var i = 0; i < preyCount; i++) {
-                    preys.push(new PIXI.Sprite(happyTexture));
-                    preys[i].id = getNextPreyId();
-                    preys[i].anchor.set(0.5);
-                    preys[i].x = getRandomInt(spriteLength, (window.innerWidth / 2) - spriteLength);
-                    preys[i].y = getRandomInt(spriteLength, app.renderer.height - spriteLength);
-                    preys[i].xdir = XDIR[getRandomInt(0, 1)];
-                    preys[i].ydir = YDIR[getRandomInt(0, 1)];
-                    preys[i].mood = HAPPY;
-                    preys[i].heartBeat = NORMAL_HEARTBEAT;
-                    preys[i].energy = MAX_PREY_ENERGY;
-                    preys[i].gender = GENDER[getRandomInt(0, 1)];
-                    preys[i].food = MAX_PREY_ENERGY; //when it dies, it provides this amount of food
-
-                    var healthBar = new PIXI.Sprite(healthBarTexture); //new PIXI.Graphics();
-                    //  healthBar.beginFill(0x00BB00);
-                    // healthBar.lineStyle(1, 0x000000);
-                    // healthBar.drawRect(-25, -40, spriteLength, 5);
-                    healthBar.x = -25;
-                    healthBar.y = -40;
-                    healthBar.tint = 0x00FF00;
-                    preys[i].energyBar = healthBar;
-
-                    var genderFlag = new PIXI.Sprite(preys[i].gender === MALE ? maleTexture : femaleTexture);
-                    genderFlag.x = -45;
-                    genderFlag.y = -45;
-                    preys[i].genderFlag = genderFlag;
-
-                    if (debug) {
-                        var foodLOS = new PIXI.Graphics();
-                        foodLOS.lineStyle(2, 0xFFFFFF);
-                        foodLOS.drawCircle(0, 0, DISTANCE_TO_DETECT_FOOD);
-                        preys[i].addChild(foodLOS);
-
-                        var enemyLOS = new PIXI.Graphics();
-                        enemyLOS.lineStyle(2, 0xFF0000);
-                        enemyLOS.drawCircle(0, 0, DISTACE_TO_PREDATOR);
-                        preys[i].addChild(enemyLOS);
-
-                        var mateLOS = new PIXI.Graphics();
-                        mateLOS.lineStyle(2, 0x800080);
-                        mateLOS.drawCircle(0, 0, DISTANCE_PREY_MATE);
-                        preys[i].addChild(mateLOS);
-
-                    }
-
-                    preys[i].addChild(healthBar);
-                    preys[i].addChild(genderFlag);
-                    app.stage.addChild(preys[i]);
+                    addPreyToWorld();
+                    //  preys.push(createPrey());
+                    //  app.stage.addChild(preys[i]);
+                    /* preys.push(new PIXI.Sprite(happyTexture));
+                     preys[i].id = getNextPreyId();
+                     preys[i].anchor.set(0.5);
+                     preys[i].x = getRandomInt(spriteLength, (window.innerWidth / 2) - spriteLength);
+                     preys[i].y = getRandomInt(spriteLength, app.renderer.height - spriteLength);
+                     preys[i].xdir = XDIR[getRandomInt(0, 1)];
+                     preys[i].ydir = YDIR[getRandomInt(0, 1)];
+                     preys[i].mood = HAPPY;
+                     preys[i].heartBeat = NORMAL_HEARTBEAT;
+                     preys[i].energy = MAX_PREY_ENERGY;
+                     preys[i].gender = GENDER[getRandomInt(0, 1)];
+                     preys[i].matingDuration = 0;
+                     preys[i].mateSpan = 0;
+                     preys[i].food = MAX_PREY_ENERGY; //when it dies, it provides this amount of food
+                     preys[i].mates = [];
+                     
+                     
+                     var baseHealthBar = new PIXI.Sprite(transparentBarTexture);
+                     baseHealthBar.x = -25;
+                     baseHealthBar.y = -40;
+                     
+                     var healthBar = new PIXI.Sprite(healthBarTexture); //new PIXI.Graphics();
+                     //  healthBar.beginFill(0x00BB00);
+                     // healthBar.lineStyle(1, 0x000000);
+                     // healthBar.drawRect(-25, -40, spriteLength, 5);
+                     healthBar.x = -25;
+                     healthBar.y = -40;
+                     healthBar.tint = 0x00FF00;
+                     preys[i].energyBar = healthBar;
+                     
+                     var genderFlag = new PIXI.Sprite(preys[i].gender === MALE ? maleTexture : femaleTexture);
+                     genderFlag.x = -45;
+                     genderFlag.y = -45;
+                     preys[i].genderFlag = genderFlag;
+                     
+                     var baseMateBar = new PIXI.Sprite(transparentBarTexture);
+                     baseMateBar.x = -25;
+                     baseMateBar.y = -50;
+                     
+                     var mateBar = new PIXI.Sprite(healthBarTexture);
+                     mateBar.x = -25;
+                     mateBar.y = -50;
+                     mateBar.tint = 0xAAAA00;
+                     preys[i].mateBar = mateBar;
+                     
+                     if (debug) {
+                     var foodLOS = new PIXI.Graphics();
+                     foodLOS.lineStyle(2, 0xFFFFFF);
+                     foodLOS.drawCircle(0, 0, DISTANCE_TO_DETECT_FOOD);
+                     preys[i].addChild(foodLOS);
+                     
+                     var enemyLOS = new PIXI.Graphics();
+                     enemyLOS.lineStyle(2, 0xFF0000);
+                     enemyLOS.drawCircle(0, 0, DISTACE_TO_PREDATOR);
+                     preys[i].addChild(enemyLOS);
+                     
+                     var mateLOS = new PIXI.Graphics();
+                     mateLOS.lineStyle(2, 0x800080);
+                     mateLOS.drawCircle(0, 0, DISTANCE_PREY_MATE);
+                     preys[i].addChild(mateLOS);
+                     
+                     }
+                     preys[i].addChild(baseHealthBar);
+                     preys[i].addChild(baseMateBar);
+                     preys[i].addChild(mateBar);
+                     preys[i].addChild(healthBar);
+                     preys[i].addChild(genderFlag);
+                     app.stage.addChild(preys[i]);*/
                 }
 
 
@@ -330,9 +434,9 @@
                         continue;
                     if (preys[i].id === id)
                         continue;
-                    if(preys[i].mood === MATING)
+                    if (preys[i].mood === MATING)
                         continue;
-                    if(preys[i].energy <= 0)
+                    if (preys[i].energy <= 0)
                         continue;
                     if (Math.abs(preys[i].x - x) < threshold && Math.abs(preys[i].y - y) < threshold) {
                         if (preys[i].x < x)
@@ -402,11 +506,11 @@
 
             function matePreyFound(m) {
                 for (var i = 0; i < preyCount; i++) {
-                    if(m.id === preys[i].id)
+                    if (m.id === preys[i].id)
                         continue;
-                    if(m.gender === preys[i].gender)
+                    if (m.gender === preys[i].gender)
                         continue;
-                    if(preys[i].mood === MATING)
+                    if (preys[i].mood === MATING)
                         continue;
                     if (preys[i].energy > 0 && hitTestRectangle(m, preys[i])) //do not mate with dead preys
                         return preys[i];
@@ -463,7 +567,7 @@
             function updateLogic() {
 
                 //update preys status
-                for (var i = 0; i < preyCount; i++) {
+                for (var i = 0; i < preys.length; i++) {
 
                     //evaluate if prey is dead
                     if (preys[i].energy <= 0) {
@@ -475,6 +579,7 @@
                         continue;
                     }
 
+                    preys[i].mateBar.scale.set(preys[i].mateSpan / PREY_MATE_SPAN, 1);
                     //update energy bar scale and color
                     preys[i].energyBar.scale.set(preys[i].energy / MAX_PREY_ENERGY, 1);
                     if (preys[i].energy <= MAX_PREY_ENERGY / 2 && preys[i].energy > MAX_PREY_ENERGY / 4) {
@@ -524,6 +629,9 @@
                     if (preys[i].mood !== EATING)
                         preys[i].energy--;
 
+                    if (preys[i].mood !== MATING && preys[i].mateSpan < PREY_MATE_SPAN)
+                        preys[i].mateSpan++;
+
                     //if prey is running away from a predator it cannot perform the other activities
                     if (preys[i].mood === SCARED || preys[i].mood === WORRIED)
                         continue;
@@ -541,19 +649,34 @@
 
                     //  if (preys[i].mood !== EATING) {                 
 
+                    //increase mating duration if it is mating and reduce energy
+                    if (preys[i].mood === MATING) {
+                        preys[i].matingDuration++;
+                        preys[i].energy--; //energy decreases again when mating
+                        if (preys[i].matingDuration >= PREY_MATING_DURATION || preys[i].mates[0].energy <= 0) {
+                            preys[i].mateSpan = 0;
+                            preys[i].mood = HAPPY;
+                            preys[i].texture = happyTexture;                            
+                            if(preys[i].gender === FEMALE)
+                                addPreyToWorld(preys[i].x + spriteLength, preys[i].y + spriteLength);
+                        }
+                        continue;
+                    }
 
                     //reproduce only if it has enough energy
-                    if (preys[i].mood !== MATING && preys[i].energy >= MAX_PREY_ENERGY * PREY_MATE_ENERGY_THRESHOLD) {
-
+                    if (preys[i].mood !== MATING && preys[i].energy >= MAX_PREY_ENERGY * PREY_MATE_ENERGY_THRESHOLD
+                            && preys[i].mateSpan >= PREY_MATE_SPAN) {
                         //get closer to another prey of different sex
                         var mateDir = isPreyMateNear(preys[i].x, preys[i].y, preys[i].gender, preys[i].id);
                         if (mateDir) {
-                            console.log("mate near");
                             preys[i].ydir = mateDir.ydir;
                             preys[i].xdir = mateDir.xdir;
                             //reproduce if found partner
                             var mate = matePreyFound(preys[i]);
-                            if (mate) { 
+                            if (mate && mate.mateSpan >= PREY_MATE_SPAN) {
+                                preys[i].mates.push(mate);
+                                mate.mates.push(preys[i]);
+                                preys[i].matingDuration = 0;
                                 preys[i].mood = MATING;
                                 preys[i].texture = matingTexture;
                                 mate.mood = MATING;
@@ -629,6 +752,7 @@
             }
 
             function start() {
+                document.getElementById("container").scrollIntoView();
                 recycleWorld();
                 if (running)
                     stop();
