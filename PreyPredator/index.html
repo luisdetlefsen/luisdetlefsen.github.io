@@ -95,10 +95,11 @@
 
         <script>
             /* 
+             * FIXME: a prey should not get out of the bounds of the world when it is running away
              prey should have energy
              prey should decrease its energy when it is not eating
              prey should increase its energy when it is eating
-             TODO: prey should run towards food
+             prey should run towards food
              prey should eat only when energy is below a certain threshold
              TODO: prey should die if it gets in contact with a predator
              TODO: prey should seek another prey to mate
@@ -147,7 +148,7 @@
             var NORMAL_HEARTBEAT = 60;
             var DISTACE_TO_PREDATOR = 50;
             var DISTANCE_TO_DETECT_FOOD = 30;
-            var PREY_ENERGY = 1000;
+            var MAX_PREY_ENERGY = 1000;
             var PREDATOR_ENERGY = 4000;
             var running = false;
             var PREY_SPEED = 5, PREDATOR_SPEED = 3;
@@ -170,7 +171,7 @@
                 DISTANCE_TO_DETECT_FOOD = parseInt(document.getElementById('distanceFood').value);
                 EAT_THRESHOLD = parseFloat(document.getElementById('eatThreshold').value);
                 DISTANCE_PREY_MATE = parseInt(document.getElementById('preyMateDistance').value);
-                debug = document.getElementById('inDebug').checked? true:false;
+                debug = document.getElementById('inDebug').checked ? true : false;
                 food = [];
                 preys = [];
                 predators = [];
@@ -231,9 +232,9 @@
                     preys[i].ydir = YDIR[getRandomInt(0, 1)];
                     preys[i].mood = HAPPY;
                     preys[i].heartBeat = NORMAL_HEARTBEAT;
-                    preys[i].energy = PREY_ENERGY;
+                    preys[i].energy = MAX_PREY_ENERGY;
                     preys[i].gender = GENDER[getRandomInt(0, 1)];
-                    preys[i].food = PREY_ENERGY; //when it dies, it provides this amount of food
+                    preys[i].food = MAX_PREY_ENERGY; //when it dies, it provides this amount of food
 
                     var healthBar = new PIXI.Sprite(healthBarTexture); //new PIXI.Graphics();
                     //  healthBar.beginFill(0x00BB00);
@@ -427,10 +428,10 @@
                 for (var i = 0; i < preyCount; i++) {
 
                     //update energy bar scale and color
-                    preys[i].energyBar.scale.set(preys[i].energy / PREY_ENERGY, 1);
-                    if (preys[i].energy <= PREY_ENERGY / 2 && preys[i].energy > PREY_ENERGY / 4) {
+                    preys[i].energyBar.scale.set(preys[i].energy / MAX_PREY_ENERGY, 1);
+                    if (preys[i].energy <= MAX_PREY_ENERGY / 2 && preys[i].energy > MAX_PREY_ENERGY / 4) {
                         preys[i].energyBar.tint = 0xFFA500;
-                    } else if (preys[i].energy <= PREY_ENERGY / 4)
+                    } else if (preys[i].energy <= MAX_PREY_ENERGY / 4)
                         preys[i].energyBar.tint = 0xFF0000;
                     else
                         preys[i].energyBar.tint = 0x00FF00;
@@ -491,9 +492,9 @@
 
                     //increase energy if it is eating. Change to happy mood if it has full energy
                     if (preys[i].mood === EATING) {
-                        if (preys[i].energy <= PREY_ENERGY)
+                        if (preys[i].energy < MAX_PREY_ENERGY)
                             preys[i].energy++;
-                        else {
+                        else if (preys[i].mood !== HAPPY) {
                             preys[i].mood = HAPPY;
                             preys[i].texture = happyTexture;
                         }
@@ -504,23 +505,29 @@
 
                     //evaluate if there is another prey nearby to reproduce
                     var mateDir = isPreyMateNear(preys[i].x, preys[i].y);
-                    if (mateDir && preys[i].energy >= PREY_ENERGY / 4) {
+                    if (mateDir && preys[i].energy >= MAX_PREY_ENERGY / 4) {
 
                     }
 
-                    //evaluate if there is food near and get closer to it
-                    var foodDir = isFoodNear(preys[i].x, preys[i].y);
-                    if (foodDir && preys[i].energy <= PREY_ENERGY * EAT_THRESHOLD) {
-                        //  preys[i].mood = EATING;
-                        //  preys[i].texture = eatingTexture;
-                        preys[i].ydir = foodDir.ydir;
-                        preys[i].xdir = foodDir.xdir;
+                    //evaluate if it needs to eat
+                    if (preys[i].energy <= (MAX_PREY_ENERGY * EAT_THRESHOLD)) {
+                        
+                        //get closer to the food
+                        var foodDir = isFoodNear(preys[i].x, preys[i].y);
+                        if (foodDir) {
+                            //  preys[i].mood = EATING;
+                            //  preys[i].texture = eatingTexture;
+                            preys[i].ydir = foodDir.ydir;
+                            preys[i].xdir = foodDir.xdir;
+                        }
+
+                        if (foodFound(preys[i]) && preys[i].mood !== EATING) {
+                            console.log('food found');
+                            preys[i].mood = EATING;
+                            preys[i].texture = eatingTexture;
+                        }
                     }
 
-                    if (foodFound(preys[i])) {
-                        preys[i].mood = EATING;
-                        preys[i].texture = eatingTexture;
-                    }
 
 
                     //     }
