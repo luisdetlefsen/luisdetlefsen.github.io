@@ -159,6 +159,7 @@
             var healthBarTexture = PIXI.Texture.fromImage(imagesBasePath + 'solidWhiteBar.png');
             var transparentBarTexture = PIXI.Texture.fromImage(imagesBasePath + 'transparentBar.png');
             var DISTANCE_PREY_MATE = 40; //distance to detect and chase a prey of opposite gender
+            var DISTANCE_PREDATOR_MATE = 60; 
             var PREY_MATE_PERIOD = 100;
             var MALE = 0, FEMALE = 1;
             var GENDER = [MALE, FEMALE];
@@ -323,7 +324,7 @@
                 app.stage.addChild(prey);
             }
 
-            function getPredatorInfo(p) {
+            function getActorInfo(p) {
                 return {id: p.id
                     , x: p.x
                     , y: p.y
@@ -382,17 +383,17 @@
                 if (debug) {
                     var foodLOS = new PIXI.Graphics();
                     foodLOS.lineStyle(2, 0xFFFFFF);
-                    foodLOS.drawCircle(0, 0, DISTANCE_TO_DETECT_FOOD);
+                    foodLOS.drawCircle(0, 0, DISTANCE_TO_DETECT_PREY);
                     predator.addChild(foodLOS);
 
-                    var enemyLOS = new PIXI.Graphics();
+                 /*   var enemyLOS = new PIXI.Graphics();
                     enemyLOS.lineStyle(2, 0xFF0000);
                     enemyLOS.drawCircle(0, 0, DISTACE_TO_PREDATOR);
-                    predator.addChild(enemyLOS);
+                    predator.addChild(enemyLOS);*/
 
                     var mateLOS = new PIXI.Graphics();
                     mateLOS.lineStyle(2, 0x800080);
-                    mateLOS.drawCircle(0, 0, DISTANCE_PREY_MATE);
+                    mateLOS.drawCircle(0, 0, DISTANCE_PREDATOR_MATE);
                     predator.addChild(mateLOS);
 
                 }
@@ -437,7 +438,7 @@
             }
 
             function isPredatorMateNear(x, y, gender, id) {
-                var threshold = DISTANCE_PREY_MATE;
+                var threshold = DISTANCE_PREDATOR_MATE;
                 var mateDir = {xdir: null, ydir: null};
                 for (var i = 0; i < predators.length; i++) {
                     if (predators[i].gender === gender)
@@ -720,9 +721,7 @@
                     if (preys[i].mood === MATING) {
                         preys[i].matingDuration++;
                         preys[i].energy--; //energy decreases again when mating
-                        if (preys[i].matingDuration >= PREY_MATING_DURATION || preys[i].mates[0].energy <= 0) {
-                            console.log("finished mating: ");
-                            console.log(getPredatorInfo(preys[i]));
+                        if (preys[i].matingDuration >= PREY_MATING_DURATION || preys[i].mates[0].energy <= 0) {                            
                             preys[i].mateSpan = 0;
                             preys[i].mood = HAPPY;
                             preys[i].texture = happyTexture;
@@ -742,9 +741,7 @@
                             preys[i].xdir = mateDir.xdir;
                             //reproduce if found partner
                             var mate = matePreyFound(preys[i]);
-                            if (mate && mate.mateSpan >= PREY_MATE_SPAN) {
-                                console.log("start mating: ");
-                            console.log(getPredatorInfo(preys[i]));
+                            if (mate && mate.mateSpan >= PREY_MATE_SPAN) {                                
                                 preys[i].mates.push(mate);
                                 mate.mates.push(preys[i]);
                                 preys[i].matingDuration = 0;
