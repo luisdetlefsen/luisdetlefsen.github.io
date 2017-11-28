@@ -8,8 +8,8 @@
         <style>
 
             body{
-                background-color: black !important;
-                color: green !important;
+                background-color: aliceblue !important;
+                color: black !important;
             }
 
             #container {
@@ -123,16 +123,16 @@
              predator should chase a prey when it is near
              TODO: prey should have a priority: mate or eat
              predator should have energy
-             TODO: predator should seek another predator to mate
+             predator should seek another predator to mate
              TODO: predator should increase its energy when it eats a prey
              predator should decrease its energy when it is not eating
              predator should have a gender
-             TODO: predator should mate with another predator of different gender0
+             predator should mate with another predator of different gender0
              predator should die if it runs out of energy
              TODO: food should have an amount that can be eaten
              TODO: food should spawn randomly every X time
              add urge to mate to prey 
-             TODO; add urge to mate to predator
+             add urge to mate to predator
              */
 
             var windowWidth = window.innerWidth * 0.95;
@@ -167,7 +167,7 @@
             var DISTANCE_TO_DETECT_FOOD = 30;
             var DISTANCE_TO_DETECT_PREY = 250;
             var MAX_PREY_ENERGY = 1000;
-            var MAX_PREDATOR_ENERGY = 4000;
+            var MAX_PREDATOR_ENERGY = 5000;
             var PREDATOR_EAT_THRESHOLD = 0.95;
             var running = false;
             var PREY_SPEED = 5, PREDATOR_SPEED = 3;
@@ -176,7 +176,7 @@
             var PREDATOR_MATE_ENERGY_THRESHOLD = 0.6;
             var EAT_THRESHOLD = 0.8;
             var PREY_MATING_DURATION = 100;
-            var PREY_MATE_SPAN = 100;
+            var PREY_MATE_SPAN = 1000;
             var PREDATOR_MATING_DURATION = 200;
             var PREDATOR_MATE_SPAN = 100;
 
@@ -321,6 +321,21 @@
                 var prey = createPrey(x, y);
                 preys.push(prey);
                 app.stage.addChild(prey);
+            }
+
+            function getPredatorInfo(p) {
+                return {id: p.id
+                    , x: p.x
+                    , y: p.y
+                    , xdir: p.xdir
+                    , ydir: p.ydir
+                    , energy: p.energy
+                    , mood: p.mood
+                    , gender: p.gender
+                    , matingDuration: p.matingDuration
+                    , mateSpan: p.mateSpan
+                    , mates: p.mates
+                };
             }
 
             function createPredator(x, y) {
@@ -528,7 +543,7 @@
                         continue;
                     if (predators[i].mood === MATING)
                         continue;
-                    if (predators[i].energy > 0 && hitTestRectangle(m, predators[i]))
+                    if (predators[i].energy >= MAX_PREDATOR_ENERGY * PREDATOR_MATE_ENERGY_THRESHOLD && hitTestRectangle(m, predators[i]))
                         return predators[i];
                 }
             }
@@ -541,7 +556,7 @@
                         continue;
                     if (preys[i].mood === MATING)
                         continue;
-                    if (preys[i].energy > 0 && hitTestRectangle(m, preys[i])) //do not mate with dead preys
+                    if (preys[i].energy > PREY_MATE_ENERGY_THRESHOLD * MAX_PREY_ENERGY && hitTestRectangle(m, preys[i])) //do not mate with dead preys
                         return preys[i];
                 }
                 return false;
@@ -599,6 +614,8 @@
                 var threshold = DISTACE_TO_PREDATOR;
                 var runDir = {xdir: null, ydir: null};
                 for (var i = 0; i < predators.length; i++) {
+                    if (predators[i].energy <= 0)
+                        continue;
                     if (Math.abs(predators[i].x - x) < threshold && Math.abs(predators[i].y - y) < threshold) {
                         if (predators[i].x <= x)
                             runDir.xdir = RIGHT;
@@ -704,6 +721,8 @@
                         preys[i].matingDuration++;
                         preys[i].energy--; //energy decreases again when mating
                         if (preys[i].matingDuration >= PREY_MATING_DURATION || preys[i].mates[0].energy <= 0) {
+                            console.log("finished mating: ");
+                            console.log(getPredatorInfo(preys[i]));
                             preys[i].mateSpan = 0;
                             preys[i].mood = HAPPY;
                             preys[i].texture = happyTexture;
@@ -724,11 +743,14 @@
                             //reproduce if found partner
                             var mate = matePreyFound(preys[i]);
                             if (mate && mate.mateSpan >= PREY_MATE_SPAN) {
+                                console.log("start mating: ");
+                            console.log(getPredatorInfo(preys[i]));
                                 preys[i].mates.push(mate);
                                 mate.mates.push(preys[i]);
                                 preys[i].matingDuration = 0;
                                 preys[i].mood = MATING;
                                 preys[i].texture = matingTexture;
+                                mate.matingDuration = 0;
                                 mate.mood = MATING;
                                 mate.texture = matingTexture;
                             }
@@ -837,6 +859,7 @@
                                 predators[i].matingDuration = 0;
                                 predators[i].mood = MATING;
                                 predators[i].texture = sleepingTexture;
+                                mate.matingDuration = 0;
                                 mate.mood = MATING;
                                 mate.texture = sleepingTexture;
                             }
@@ -860,6 +883,7 @@
             function stop() {
                 app.ticker.remove(update);
                 running = false;
+
                 // recycleWorld();
             }
 
