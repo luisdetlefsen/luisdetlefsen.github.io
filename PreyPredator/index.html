@@ -113,6 +113,8 @@
              prey should run towards food
              prey should eat only when energy is below a certain threshold
              TODO: prey should die if it gets in contact with a predator
+             TODO: prey should have an age
+             TODO: predator should have an age
              prey should seek another prey to mate
              prey should have a gender
              prey should mate with another prey of different sex
@@ -125,7 +127,7 @@
              TODO: predator should increase its energy when it eats a prey
              predator should decrease its energy when it is not eating
              predator should have a gender
-             TODO: predator should mate with another predator of different gender
+             TODO: predator should mate with another predator of different gender0
              predator should die if it runs out of energy
              TODO: food should have an amount that can be eaten
              TODO: food should spawn randomly every X time
@@ -171,9 +173,12 @@
             var PREY_SPEED = 5, PREDATOR_SPEED = 3;
             var predatorCount = 3, preyCount = 5, foodCount = 5;
             var PREY_MATE_ENERGY_THRESHOLD = 0.4;
+            var PREDATOR_MATE_ENERGY_THRESHOLD = 0.6;
             var EAT_THRESHOLD = 0.8;
             var PREY_MATING_DURATION = 100;
-            var PREY_MATE_SPAN = 1000;
+            var PREY_MATE_SPAN = 100;
+            var PREDATOR_MATING_DURATION = 200;
+            var PREDATOR_MATE_SPAN = 100;
 
             var food = [];
             var spriteLength = 50;
@@ -329,14 +334,19 @@
                 predator.energy = MAX_PREDATOR_ENERGY;
                 predator.mood = LURKING;
                 predator.gender = GENDER[getRandomInt(0, 1)];
+                predator.matingDuration = 0;
+                predator.mateSpan = 0;
+                predator.mates = [];
+
+
+                var baseHealthBar = new PIXI.Sprite(transparentBarTexture);
+                baseHealthBar.x = -25;
+                baseHealthBar.y = -40;
 
                 var healthBar = new PIXI.Sprite(healthBarTexture);//new PIXI.Graphics();
                 healthBar.x = -25;
                 healthBar.y = -40;
                 healthBar.tint = 0x00FF00;
-                // healthBar.beginFill(0x00BB00);
-                // healthBar.lineStyle(1, 0x000000);
-                // healthBar.drawRect(-25, -40, spriteLength, 5);
                 predator.energyBar = healthBar;
 
                 var genderFlag = new PIXI.Sprite(predator.gender === MALE ? maleTexture : femaleTexture);
@@ -344,6 +354,38 @@
                 genderFlag.y = -45;
                 predator.genderFlag = genderFlag;
 
+                var baseMateBar = new PIXI.Sprite(transparentBarTexture);
+                baseMateBar.x = -25;
+                baseMateBar.y = -50;
+
+                var mateBar = new PIXI.Sprite(healthBarTexture);
+                mateBar.x = -25;
+                mateBar.y = -50;
+                mateBar.tint = 0xAAAA00;
+                predator.mateBar = mateBar;
+
+                if (debug) {
+                    var foodLOS = new PIXI.Graphics();
+                    foodLOS.lineStyle(2, 0xFFFFFF);
+                    foodLOS.drawCircle(0, 0, DISTANCE_TO_DETECT_FOOD);
+                    predator.addChild(foodLOS);
+
+                    var enemyLOS = new PIXI.Graphics();
+                    enemyLOS.lineStyle(2, 0xFF0000);
+                    enemyLOS.drawCircle(0, 0, DISTACE_TO_PREDATOR);
+                    predator.addChild(enemyLOS);
+
+                    var mateLOS = new PIXI.Graphics();
+                    mateLOS.lineStyle(2, 0x800080);
+                    mateLOS.drawCircle(0, 0, DISTANCE_PREY_MATE);
+                    predator.addChild(mateLOS);
+
+                }
+
+
+                predator.addChild(baseHealthBar);
+                predator.addChild(baseMateBar);
+                predator.addChild(mateBar);
                 predator.addChild(healthBar);
                 predator.addChild(genderFlag);
                 return predator;
@@ -379,10 +421,37 @@
                 }
             }
 
+            function isPredatorMateNear(x, y, gender, id) {
+                var threshold = DISTANCE_PREY_MATE;
+                var mateDir = {xdir: null, ydir: null};
+                for (var i = 0; i < predators.length; i++) {
+                    if (predators[i].gender === gender)
+                        continue;
+                    if (predators[i] === id)
+                        continue;
+                    if (predators[i].mood === MATING)
+                        continue;
+                    if (predators[i].energy <= 0)
+                        continue;
+                    if (Math.abs(predators[i].x - x) < threshold && Math.abs(predators[i].y) - y < threshold) {
+                        if (predators[i].x < x)
+                            mateDir.xdir = LEFT;
+                        else
+                            mateDir.xdir = RIGHT;
+                        if (predators[i].y < y)
+                            mateDir.ydir = UP;
+                        else
+                            mateDir.ydir = DOWN;
+                        return mateDir;
+                    }
+
+                }
+            }
+
             function isPreyMateNear(x, y, gender, id) {
                 var threshold = DISTANCE_PREY_MATE;
                 var mateDir = {xdir: null, ydir: null};
-                for (var i = 0; i < preyCount; i++) {
+                for (var i = 0; i < preys.length; i++) {
                     if (gender === preys[i].gender) //do not allow same gender sex
                         continue;
                     if (preys[i].id === id)
@@ -407,11 +476,7 @@
             }
 
             function hitTestRectangle(r1, r2) {
-
-                //Define the variables we'll need to calculate
                 var hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
-
-                //hit will determine whether there's a collision
                 hit = false;
 
                 //Find the center points of each sprite
@@ -436,7 +501,6 @@
 
                 //Check for a collision on the x axis
                 if (Math.abs(vx) < combinedHalfWidths) {
-
                     //A collision might be occuring. Check for a collision on the y axis
                     if (Math.abs(vy) < combinedHalfHeights) {
 
@@ -448,7 +512,6 @@
                         hit = false;
                     }
                 } else {
-
                     //There's no collision on the x axis
                     hit = false;
                 }
@@ -457,8 +520,21 @@
                 return hit;
             }
 
+            function matePredatorFound(m) {
+                for (var i = 0; i < predators.length; i++) {
+                    if (m.id === predators[i].id)
+                        continue;
+                    if (m.gender === predators[i].gender)
+                        continue;
+                    if (predators[i].mood === MATING)
+                        continue;
+                    if (predators[i].energy > 0 && hitTestRectangle(m, predators[i]))
+                        return predators[i];
+                }
+            }
+
             function matePreyFound(m) {
-                for (var i = 0; i < preyCount; i++) {
+                for (var i = 0; i < preys.length; i++) {
                     if (m.id === preys[i].id)
                         continue;
                     if (m.gender === preys[i].gender)
@@ -623,7 +699,6 @@
                     }
 
                     //  if (preys[i].mood !== EATING) {                 
-
                     //increase mating duration if it is mating and reduce energy
                     if (preys[i].mood === MATING) {
                         preys[i].matingDuration++;
@@ -681,6 +756,7 @@
 
                 //Update predators
                 for (var i = 0; i < predators.length; i++) {
+                    predators[i].mateBar.scale.set(predators[i].mateSpan / PREDATOR_MATE_SPAN, 1);
                     predators[i].energyBar.scale.set(predators[i].energy / MAX_PREDATOR_ENERGY, 1);
                     if (predators[i].energy <= MAX_PREDATOR_ENERGY / 2 && predators[i].energy > MAX_PREDATOR_ENERGY / 4) {
                         predators[i].energyBar.tint = 0xFFA500;
@@ -702,14 +778,16 @@
                         predators[i].energy--;
                     }
 
-                    var newPos = deltaMove(predators[i].xdir, predators[i].ydir, predators[i].x, predators[i].y, PREDATOR_SPEED);
-                    predators[i].x = newPos.x;
-                    predators[i].y = newPos.y;
-                    predators[i].ydir = newPos.ydir;
-                    predators[i].xdir = newPos.xdir;
+                    if (predators[i].mood === LURKING) {
+                        var newPos = deltaMove(predators[i].xdir, predators[i].ydir, predators[i].x, predators[i].y, PREDATOR_SPEED);
+                        predators[i].x = newPos.x;
+                        predators[i].y = newPos.y;
+                        predators[i].ydir = newPos.ydir;
+                        predators[i].xdir = newPos.xdir;
+                    }
 
-
-                    if (predators[i].mood !== EATING && predators[i].energy <= (MAX_PREDATOR_ENERGY * PREDATOR_EAT_THRESHOLD)) {
+                    if (predators[i].mood !== EATING && predators[i].energy <= (MAX_PREDATOR_ENERGY * PREDATOR_EAT_THRESHOLD)
+                            && predators[i].mood !== MATING) {
                         //get closer to the food
                         var foodDir = isPreyNear(predators[i].x, predators[i].y);
                         if (foodDir) {
@@ -723,6 +801,51 @@
                             //        preys[i].texture = eatingTexture;
                             //    }
                         }
+                    }
+
+                    if (predators[i].mood !== MATING && predators[i].mateSpan < PREDATOR_MATE_SPAN)
+                        predators[i].mateSpan++;
+
+                    if (predators[i].mood === EATING) {
+                        continue;
+                    }
+
+                    if (predators[i].mood === MATING) {
+                        predators[i].matingDuration++;
+                        predators[i].energy--;
+                        if (predators[i].matingDuration >= PREDATOR_MATING_DURATION || predators[i].mates[0].energy <= 0) {
+                            predators[i].mateSpan = 0;
+                            predators[i].mood = LURKING;
+                            predators[i].texture = angryTexture;
+                            if (predators[i].gender === FEMALE)
+                                addPredatorToWorld(predators[i].x + spriteLength, predators[i].y + spriteLength);
+                        }
+                        continue;
+                    }
+
+                    if (predators[i].mood !== MATING && predators[i].energy >= MAX_PREDATOR_ENERGY * PREDATOR_MATE_ENERGY_THRESHOLD && predators[i].mateSpan >= PREDATOR_MATE_SPAN) {
+                        var mateDir = isPredatorMateNear(predators[i].x, predators[i].y, predators[i].gender, predators[i].id);
+                        if (mateDir) {
+                            predators[i].ydir = mateDir.ydir;
+                            predators[i].xdir = mateDir.xdir;
+
+                            var mate = matePredatorFound(predators[i]);
+
+                            if (mate && mate.mateSpan >= PREDATOR_MATE_SPAN) {
+                                predators[i].mates.push(mate);
+                                mate.mates.push(predators[i]);
+                                predators[i].matingDuration = 0;
+                                predators[i].mood = MATING;
+                                predators[i].texture = sleepingTexture;
+                                mate.mood = MATING;
+                                mate.texture = sleepingTexture;
+                            }
+
+
+                        }
+
+
+
                     }
 
 
