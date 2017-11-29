@@ -233,6 +233,9 @@
             <div id="container" style="margin:10px;"></div>
 
         </div>
+        <div class="row">
+            <div id="statistics"></div>
+        </div>
 
 
 
@@ -337,6 +340,84 @@
             var ageIntervalHandle;
 
             var debug = true;
+            var renderer, stage, graphen;
+
+
+            function initStatsContainer() {
+                renderer = PIXI.autoDetectRenderer(300, 200, null);
+                stage = new PIXI.Stage(0xAABBCC, false);
+                graphen = new PIXI.Graphics();
+                document.getElementById("statistics").appendChild(renderer.view);
+                stage.addChild(graphen);
+                graphen.position.x = 300;
+                graphen.position.y = 200;
+            }
+
+            var malePredatorStat = 0x0000CD;
+            var femalePredatorStat = 0x87CEEB;
+            var foodStat = 0xFFA5000;
+            var malePreyStat = 0x8B008B;
+            var femalePreyStat = 0xDDA0DD;
+            var xdata = [], ydata = [];
+            var xindex = 0;
+
+            function collectStats() {
+                
+                var malePreyCount = 0, femalePreyCount = 0;
+                var malePredatorCount = 0, femalePredatorCount = 0;
+                var foodCount = 0;
+                xindex++;
+                for (var i = 0; i < preys.length; i++) {
+                    if (preys[i].mood !== DEAD) {
+                        if (preys[i].gender === MALE)
+                            malePreyCount++;
+                        else
+                            femalePreyCount++;
+                    }
+                }
+
+                for (var i = 0; i < predators.length; i++) {
+                    if (predators[i].mood !== DEAD) {
+                        if (predators[i].gender === MALE)
+                            malePredatorCount++;
+                        else
+                            femalePredatorCount++;
+                    }
+                }
+
+                for (var i = 0; i < food.length; i++) {
+                    if (food[i].energy > 0)
+                        foodCount++;
+                }
+
+
+                xdata.push(xindex);
+                ydata.push({mPrey: malePreyCount, fPrey: femalePreyCount, mPred: malePredatorCount, fPred: femalePredatorCount, f: foodCount});
+
+                graphen.clear();
+                if (xindex > 300) {
+                    xdata.shift();
+                    ydata.shift();
+                }
+
+                var curr = 0;
+                curr += foodCount;
+
+                for (var i = 0; i < xdata.length; i++) {
+             //       console.log("X: " + xdata[i] + " Y: " + ydata[i].f);
+                    graphen.lineStyle(2, foodStat, 1);
+                    curr += ydata[i].f;
+                    graphen.moveTo(xdata[i], curr);
+
+                    graphen.lineStyle(2, femalePredatorStat, 1);
+                    curr += ydata[i].fPred;
+                    graphen.moveTo(xdata[i], curr);
+                }
+                graphen.position.x -= 1;
+
+                renderer.render(stage);
+
+            }
 
             function increaseAgeInterval() {
                 for (var i = 0; i < preys.length; i++) {
@@ -641,6 +722,7 @@
 
             function fillWorld() {
                 app = new PIXI.Application(windowWidth, windowHeight, {backgroundColor: 0x118C4E});
+                PIXI.AUTO_PREVENT_DEFAULT = false;
                 document.getElementById('container').appendChild(app.view);
 
                 //Food
@@ -1159,6 +1241,10 @@
 
 
                 }
+
+
+                collectStats();
+
             }
 
 
@@ -1188,6 +1274,9 @@
                 app.ticker.add(update);
                 running = true;
                 document.getElementById("container").scrollIntoView();
+
+
+                initStatsContainer();
             }
 
 
