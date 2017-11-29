@@ -21,23 +21,23 @@
             }
 
             .prey{
-            /*    background-color: #BBEDD2;
-           //     padding: 10px;*/
+                /*    background-color: #BBEDD2;
+               //     padding: 10px;*/
             }
 
             .predator{
-            /*    background-color: #B5B5B5;
-                padding: 10px;*/
+                /*    background-color: #B5B5B5;
+                    padding: 10px;*/
             }
 
             .food{
-      /*          background-color: #DC9A6A;
-                padding: 10px;*/
+                /*          background-color: #DC9A6A;
+                          padding: 10px;*/
             }
 
             .general{
-           /*     background: #E9A5D0;
-                padding: 10px;*/
+                /*     background: #E9A5D0;
+                     padding: 10px;*/
             }
             .panel-heading{
                 font-weight: bold;
@@ -51,31 +51,31 @@
         <script src="Scripts/pixi/pixi.min.js"></script>
 
         <div class="panel panel-info">
-            <div class="panel-heading">Prey settings</div>
+            <div class="panel-heading">Prey settings  <img src="Content/img/smileys/happyt.png" /> </div>
             <div class="panel-body">
                 <div class="row prey">            
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
-                        <label for="preyAmount">Number of preys</label>
+                        <label for="preyAmount">Initial number of preys</label>
                         <input class="form-control" id='preyAmount' type="number" value="5" step="1" min="0" />
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
-                        <label for="preySpeed">Prey speed</label>
+                        <label for="preySpeed">Speed</label>
                         <input class="form-control" id='preySpeed' type="number" value="5" />
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
-                        <label for="distancePredator">Distance for prey to detect predator</label>
+                        <label for="distancePredator">Distance to detect predator</label>
                         <input class="form-control" id='distancePredator' type="number" value="50" step="1" min="0" />
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
-                        <label for="distanceFood">Distance for prey to detect food</label>
+                        <label for="distanceFood">Distance to detect food</label>
                         <input class="form-control" id='distanceFood' type="number" value="30" step="1" min="0" />
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
-                        <label for="preyMateDistance">Distance to detect prey of another gender</label>
+                        <label for="preyMateDistance">Distance to detect mate</label>
                         <input class="form-control" id='preyMateDistance' type="number" value="40" step="1" min="0" />
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
-                        <label for="preyMateThreshold">Prey will reproduce when energy is above</label>
+                        <label for="preyMateThreshold">Reproduce when energy is above</label>
                         <input class="form-control" id='preyMateThreshold' type="number" value="0.4" step="0.1" min="0" />
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
@@ -104,27 +104,29 @@
                     </div>
 
                 </div>
-
-
             </div>
+
+
+
         </div>
 
+
         <div class="panel panel-danger">
-            <div class="panel-heading">Predator settings</div>
+            <div class="panel-heading">Predator settings  <img src="Content/img/smileys/angryt.png" /></div>
             <div class="panel-body">
                 <div class="row predator">
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
-                        <label for="predatorCount">Number of predators</label>
+                        <label for="predatorCount">Initial number of predators</label>
                         <input class="form-control" id='predatorCount' type="number" value="3" />
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
-                        <label for='predatorSpeed'>Predator speed</label>
+                        <label for='predatorSpeed'>Speed</label>
                         <input class="form-control"  id='predatorSpeed' type="number" value="2" />
                     </div>    
 
 
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
-                        <label for="predatorMateDistance">Distance to detect predator of another gender</label>
+                        <label for="predatorMateDistance">Distance to detect mate</label>
                         <input class="form-control" id='predatorMateDistance' type="number" value="60" step="1" min="0" />
                     </div>
 
@@ -134,7 +136,7 @@
                     </div>
 
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
-                        <label for="masPredatorEnergy">Distance to detect prey</label>
+                        <label for="masPredatorEnergy">Max energy</label>
                         <input class="form-control" id='masPredatorEnergy' type="number" value="5000" step="1" min="0" />
                     </div>
 
@@ -174,7 +176,7 @@
 
 
         <div class="panel panel-success">
-            <div class="panel-heading">Food settings</div>
+            <div class="panel-heading">Food settings  <img src="Content/img/smileys/pizzat.png" /> </div>
             <div class="panel-body">
                 <div class='row food'>
 
@@ -353,7 +355,7 @@
                     if (predators[i].age >= MAX_PREDATOR_AGE) {
                         predators[i].energy = 0;
                         predators[i].mood = DEAD;
-                        predators[i].texture = deadTexture;
+                        predators[i].texture = predatorDeadTexture;
                     }
                     predators[i].age++;
                 }
