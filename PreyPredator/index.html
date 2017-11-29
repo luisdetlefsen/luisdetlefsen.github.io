@@ -362,7 +362,7 @@
             var xindex = 0;
 
             function collectStats() {
-                
+
                 var malePreyCount = 0, femalePreyCount = 0;
                 var malePredatorCount = 0, femalePredatorCount = 0;
                 var foodCount = 0;
@@ -393,25 +393,44 @@
 
                 xdata.push(xindex);
                 ydata.push({mPrey: malePreyCount, fPrey: femalePreyCount, mPred: malePredatorCount, fPred: femalePredatorCount, f: foodCount});
-
-                graphen.clear();
                 if (xindex > 300) {
                     xdata.shift();
                     ydata.shift();
                 }
+                graphen.clear();
+
 
                 var curr = 0;
                 curr += foodCount;
 
                 for (var i = 0; i < xdata.length; i++) {
-             //       console.log("X: " + xdata[i] + " Y: " + ydata[i].f);
+                    //  console.log("X: " + xdata[i] + " Y: " + ydata[i].f+ " " + ydata[i].fPred);
+                    curr = 0;
                     graphen.lineStyle(2, foodStat, 1);
-                    curr += ydata[i].f;
-                    graphen.moveTo(xdata[i], curr);
+                    curr -= ydata[i].f * 10;
+                    graphen.moveTo(xdata[i], 0);
+                    graphen.lineTo(xdata[i],curr);
 
-                    graphen.lineStyle(2, femalePredatorStat, 1);
-                    curr += ydata[i].fPred;
+                    graphen.lineStyle(2, femalePredatorStat, 1);                    
                     graphen.moveTo(xdata[i], curr);
+                    curr -= ydata[i].fPred* 10;
+                    graphen.lineTo(xdata[i],curr);
+
+                    graphen.lineStyle(2, malePredatorStat, 1);                    
+                    graphen.moveTo(xdata[i], curr);
+                    curr -= ydata[i].mPred* 10;
+                    graphen.lineTo(xdata[i],curr);
+                    
+                    graphen.lineStyle(2, femalePreyStat, 1);                    
+                    graphen.moveTo(xdata[i], curr);
+                    curr -= ydata[i].fPrey* 10;
+                    graphen.lineTo(xdata[i],curr);
+                    
+                    graphen.lineStyle(2, malePreyStat, 1);                    
+                    graphen.moveTo(xdata[i], curr);
+                    curr -= ydata[i].mPrey* 10;
+                    graphen.lineTo(xdata[i],curr);
+                    
                 }
                 graphen.position.x -= 1;
 
@@ -722,7 +741,8 @@
 
             function fillWorld() {
                 app = new PIXI.Application(windowWidth, windowHeight, {backgroundColor: 0x118C4E});
-                PIXI.AUTO_PREVENT_DEFAULT = false;
+                app.renderer.plugins.interaction.autoPreventDefault = false;
+                
                 document.getElementById('container').appendChild(app.view);
 
                 //Food
