@@ -111,10 +111,10 @@
              * TODO: prey should die if it gets in contact with a predator
              prey should have an age
              predator should have an age
-             TODO: prey and predator should have a life expectancy
+             prey and predator should have a life expectancy
              TODO: prey should have a priority: mate or eat
-             TODO: prey should die when it reaches the maximum age
-             TODO: predator should die when it reaches the maximum age
+             prey should die when it reaches the maximum age
+             predator should die when it reaches the maximum age
              food should have an amount that can be eaten
              food should spawn randomly every X time
              prey should have energy
@@ -340,11 +340,11 @@
 
                 var baseAgeBar = new PIXI.Sprite(transparentBarTexture);
                 baseAgeBar.x = -25;
-                baseAgeBar.y = -55;
+                baseAgeBar.y = -60;
 
                 var ageBar = new PIXI.Sprite(healthBarTexture);
                 ageBar.x = -25;
-                ageBar.y = -55;
+                ageBar.y = -60;
                 ageBar.tint = 0xBB00BB;
                 prey.ageBar = ageBar;
 
@@ -440,11 +440,11 @@
 
                 var baseAgeBar = new PIXI.Sprite(transparentBarTexture);
                 baseAgeBar.x = -25;
-                baseAgeBar.y = -55;
+                baseAgeBar.y = -60;
 
                 var ageBar = new PIXI.Sprite(healthBarTexture);
                 ageBar.x = -25;
-                ageBar.y = -55;
+                ageBar.y = -60;
                 ageBar.tint = 0xBB00BB;
                 predator.ageBar = ageBar;
 
@@ -879,7 +879,16 @@
                 }
 
                 //Update predators
-                for (var i = 0; i < predators.length; i++) {
+                for (var i = 0; i < predators.length; i++) {                    
+                    if (predators[i].energy <= 0) {
+                        if (predators[i].mood !== DEAD) {
+                            predators[i].mood = DEAD;
+                            predators[i].texture = deadTexture;
+                            predators[i].energyBar.scale.set(0, 1);
+                        }
+                        continue;
+                    }
+                    
                     predators[i].mateBar.scale.set(predators[i].mateSpan / PREDATOR_MATE_SPAN, 1);
                     predators[i].energyBar.scale.set(predators[i].energy / MAX_PREDATOR_ENERGY, 1);
                     predators[i].ageBar.scale.set(predators[i].age / MAX_PREDATOR_AGE, 1);
@@ -889,16 +898,7 @@
                         predators[i].energyBar.tint = 0xFF0000;
                     else
                         predators[i].energyBar.tint = 0x00FF00;
-
-                    if (predators[i].energy <= 0) {
-                        if (predators[i].mood !== DEAD) {
-                            predators[i].mood = DEAD;
-                            predators[i].texture = deadTexture;
-                            predators[i].energyBar.scale.set(0, 1);
-                        }
-                        continue;
-                    }
-
+                    
                     if (predators[i].mood !== EATING) {
                         predators[i].energy--;
                     }
