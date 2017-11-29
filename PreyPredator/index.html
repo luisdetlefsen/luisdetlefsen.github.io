@@ -207,6 +207,8 @@
 
             function increaseAgeInterval() {
                 for (var i = 0; i < preys.length; i++) {
+                    if(preys[i].mood === DEAD)
+                        continue;                    
                     if (preys[i].age >= MAX_PREY_AGE) {
                         preys[i].energy = 0;
                         preys[i].mood = DEAD;
@@ -215,6 +217,8 @@
                     preys[i].age++;
                 }
                 for (var i = 0; i < predators.length; i++) {
+                    if(predators[i].mood === DEAD)
+                        continue;
                     if (predators[i].age >= MAX_PREDATOR_AGE) {
                         predators[i].energy = 0;
                         predators[i].mood = DEAD;
@@ -300,12 +304,13 @@
                 prey.xdir = XDIR[getRandomInt(0, 1)];
                 prey.ydir = YDIR[getRandomInt(0, 1)];
                 prey.mood = HAPPY;
+                prey.interactiveChildren = false;
                 prey.heartBeat = NORMAL_HEARTBEAT;
                 prey.energy = MAX_PREY_ENERGY;
                 prey.gender = GENDER[getRandomInt(0, 1)];
                 prey.matingDuration = 0;
                 prey.mateSpan = 0;
-                prey.food = MAX_PREY_ENERGY; //when it dies, it provides this amount of food
+                prey.food = 10;//MAX_PREY_ENERGY; //when it dies, it provides this amount of food
                 prey.mates = [];
                 prey.plates = [];
                 prey.age = getRandomInt(1, MAX_PREY_AGE);
@@ -387,6 +392,7 @@
                     , y: p.y
                     , xdir: p.xdir
                     , ydir: p.ydir
+                    , age: p.age
                     , energy: p.energy
                     , mood: p.mood
                     , gender: p.gender
@@ -405,11 +411,13 @@
                 predator.xdir = XDIR[getRandomInt(0, 1)];
                 predator.ydir = YDIR[getRandomInt(0, 1)];
                 predator.energy = MAX_PREDATOR_ENERGY;
+                predator.interactiveChildren = false;
                 predator.mood = LURKING;
                 predator.gender = GENDER[getRandomInt(0, 1)];
                 predator.matingDuration = 0;
                 predator.mateSpan = 0;
                 predator.mates = [];
+                predator.plates = [];
                 predator.age = getRandomInt(1, MAX_PREDATOR_AGE);
 
 
@@ -524,11 +532,11 @@
                 for (var i = 0; i < predators.length; i++) {
                     if (predators[i].gender === gender)
                         continue;
-                    if (predators[i] === id)
+                    if (predators[i].id === id)
                         continue;
                     if (predators[i].mood === MATING)
                         continue;
-                    if (predators[i].energy <= 0)
+                    if (predators[i].mood === DEAD)
                         continue;
                     if (predators[i].age <= MIN_PREDATOR_MATE_AGE)
                         continue;
@@ -557,7 +565,7 @@
                         continue;
                     if (preys[i].mood === MATING)
                         continue;
-                    if (preys[i].energy <= 0)
+                    if (preys[i].mood === DEAD)
                         continue;
                     if (preys[i].age <= MIN_PREY_MATE_AGE)
                         continue;
@@ -604,11 +612,9 @@
                 if (Math.abs(vx) < combinedHalfWidths) {
                     //A collision might be occuring. Check for a collision on the y axis
                     if (Math.abs(vy) < combinedHalfHeights) {
-
                         //There's definitely a collision happening
                         hit = true;
                     } else {
-
                         //There's no collision on the y axis
                         hit = false;
                     }
@@ -616,8 +622,6 @@
                     //There's no collision on the x axis
                     hit = false;
                 }
-
-                //`hit` will be either `true` or `false`
                 return hit;
             }
 
@@ -630,6 +634,8 @@
                     if (predators[i].mood === MATING)
                         continue;
                     if (predators[i].age <= MIN_PREDATOR_MATE_AGE)
+                        continue;
+                    if (predators[i].mood === DEAD)
                         continue;
                     if (predators[i].energy >= MAX_PREDATOR_ENERGY * PREDATOR_MATE_ENERGY_THRESHOLD && hitTestRectangle(m, predators[i]))
                         return predators[i];
@@ -646,7 +652,20 @@
                         continue;
                     if (preys[i].age <= MIN_PREY_MATE_AGE)
                         continue;
+                    if (preys[i].mood === DEAD)
+                        continue;
                     if (preys[i].energy > PREY_MATE_ENERGY_THRESHOLD * MAX_PREY_ENERGY && hitTestRectangle(m, preys[i])) //do not mate with dead preys
+                        return preys[i];
+                }
+                return false;
+            }
+
+            //It will detect a dead prey and eat it.
+            function deadPreyFound(p) {
+                for (var i = 0; i < preys.length; i++) {
+                    if (preys[i].mood !== DEAD)
+                        continue;
+                    if (hitTestRectangle(p, preys[i]))
                         return preys[i];
                 }
                 return false;
@@ -686,8 +705,23 @@
             function isPreyNear(x, y) {
                 var threshold = DISTANCE_TO_DETECT_PREY;
                 var foodDir = {xdir: null, ydir: null};
+                for (var i = 0; i < preys.length; i++) { //search for dead preys first
+                    if (preys[i].mood === DEAD && preys[i].food > 0) {
+                        if (Math.abs(preys[i].x - x) < threshold && Math.abs(preys[i].y - y) < threshold) {
+                            if (x >= preys[i].x)
+                                foodDir.xdir = LEFT;
+                            else
+                                foodDir.xdir = RIGHT;
+                            if (preys[i].y <= y)
+                                foodDir.ydir = UP;
+                            else
+                                foodDir.ydir = DOWN;
+                            return foodDir;
+                        }
+                    }
+                }
                 for (var i = 0; i < preys.length; i++) {
-                    if (preys[i].energy <= 0)
+                    if (preys[i].mood === DEAD)
                         continue;
                     if (Math.abs(preys[i].x - x) < threshold && Math.abs(preys[i].y - y) < threshold) {
                         if (x >= preys[i].x)
@@ -708,7 +742,7 @@
                 var threshold = DISTACE_TO_PREDATOR;
                 var runDir = {xdir: null, ydir: null};
                 for (var i = 0; i < predators.length; i++) {
-                    if (predators[i].energy <= 0)
+                    if (predators[i].mood === DEAD)
                         continue;
                     if (Math.abs(predators[i].x - x) < threshold && Math.abs(predators[i].y - y) < threshold) {
                         if (predators[i].x <= x)
@@ -732,7 +766,7 @@
                 for (var i = 0; i < preys.length; i++) {
 
                     //evaluate if prey is dead
-                    if (preys[i].energy <= 0) {
+                    if (preys[i].energy <= 0 || preys[i].mood === DEAD) {
                         if (preys[i].mood !== DEAD) {
                             preys[i].mood = DEAD;
                             preys[i].texture = deadTexture;
@@ -824,7 +858,7 @@
                     if (preys[i].mood === MATING) {
                         preys[i].matingDuration++;
                         preys[i].energy--; //energy decreases again when mating
-                        if (preys[i].matingDuration >= PREY_MATING_DURATION || preys[i].mates[0].energy <= 0) {
+                        if (preys[i].matingDuration >= PREY_MATING_DURATION || preys[i].mates[0].mood === DEAD) {
                             preys[i].mateSpan = 0;
                             preys[i].mood = HAPPY;
                             preys[i].texture = happyTexture;
@@ -879,16 +913,17 @@
                 }
 
                 //Update predators
-                for (var i = 0; i < predators.length; i++) {                    
-                    if (predators[i].energy <= 0) {
+                for (var i = 0; i < predators.length; i++) {
+                    if (predators[i].energy <= 0 || predators[i].mood === DEAD) {
                         if (predators[i].mood !== DEAD) {
                             predators[i].mood = DEAD;
                             predators[i].texture = deadTexture;
-                            predators[i].energyBar.scale.set(0, 1);
+                       //     predators[i].energyBar.scale.set(0, 1);
+                            predators[i].removeChild(predators[i].energyBar);
                         }
                         continue;
                     }
-                    
+
                     predators[i].mateBar.scale.set(predators[i].mateSpan / PREDATOR_MATE_SPAN, 1);
                     predators[i].energyBar.scale.set(predators[i].energy / MAX_PREDATOR_ENERGY, 1);
                     predators[i].ageBar.scale.set(predators[i].age / MAX_PREDATOR_AGE, 1);
@@ -898,7 +933,7 @@
                         predators[i].energyBar.tint = 0xFF0000;
                     else
                         predators[i].energyBar.tint = 0x00FF00;
-                    
+
                     if (predators[i].mood !== EATING) {
                         predators[i].energy--;
                     }
@@ -916,15 +951,15 @@
                         //get closer to the food
                         var foodDir = isPreyNear(predators[i].x, predators[i].y);
                         if (foodDir) {
-                            //  preys[i].mood = EATING;
-                            //  preys[i].texture = eatingTexture;
                             predators[i].ydir = foodDir.ydir;
                             predators[i].xdir = foodDir.xdir;
                             //eat if found food
-                            //   if (foodFound(preys[i])) {
-                            //       preys[i].mood = EATING;
-                            //        preys[i].texture = eatingTexture;
-                            //    }
+                            var deadPrey = deadPreyFound(predators[i]);
+                            if (deadPrey) {
+                                predators[i].mood = EATING;
+                                predators[i].texture = eatingTexture;
+                                predators[i].plates[0] = deadPrey;
+                            }
                         }
                     }
 
@@ -932,13 +967,28 @@
                         predators[i].mateSpan++;
 
                     if (predators[i].mood === EATING) {
+                        if (predators[i].energy < MAX_PREDATOR_ENERGY) {
+                            if (predators[i].plates[0].food > 0) {
+                                predators[i].energy++;
+                                predators[i].plates[0].food--;
+                            } else {
+                                predators[i].plates[0].texture = emptyPlateTexture;
+                                predators[i].plates.splice(0, 1);
+                                predators[i].mood = LURKING;
+                                predators[i].texture = angryTexture;
+                            }
+                        } else {
+                            predators[i].plates.splice(0, 1);
+                            predators[i].mood = LURKING;
+                            predators[i].texture = angryTexture;
+                        }
                         continue;
                     }
 
                     if (predators[i].mood === MATING) {
                         predators[i].matingDuration++;
                         predators[i].energy--;
-                        if (predators[i].matingDuration >= PREDATOR_MATING_DURATION || predators[i].mates[0].energy <= 0) {
+                        if (predators[i].matingDuration >= PREDATOR_MATING_DURATION || predators[i].mates[0].mood === DEAD) {
                             predators[i].mateSpan = 0;
                             predators[i].mood = LURKING;
                             predators[i].texture = angryTexture;
