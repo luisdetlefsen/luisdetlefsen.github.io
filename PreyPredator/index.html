@@ -287,7 +287,7 @@
              */
 
             var windowWidth = window.innerWidth * 0.95;
-            var windowHeight = window.innerHeight * 0.9;
+            var windowHeight = window.innerHeight * 0.7;
             var app;
             var UP = 0, DOWN = 1, RIGHT = 2, LEFT = 3;
             var XDIR = [RIGHT, LEFT];
@@ -355,16 +355,17 @@
             var debug = true;
             var renderer, stage, graphen;
 
+var statsW = 300, statsH = 100, statsS = 1;
 
             function initStatsContainer() {
-                renderer = PIXI.autoDetectRenderer(300, 200, null);
+                renderer = PIXI.autoDetectRenderer(statsW, statsH, null);
                 renderer.view.style['touch-action'] = 'auto';
                 stage = new PIXI.Stage(0xAABBCC, false);
                 graphen = new PIXI.Graphics();
                 document.getElementById("statistics").appendChild(renderer.view);
                 stage.addChild(graphen);
-                graphen.position.x = 300;
-                graphen.position.y = 200;
+                graphen.position.x = statsW;
+                graphen.position.y = statsH;
             }
 
             var malePredatorStat = 0x0000CD;
@@ -406,7 +407,7 @@
 
                 xdata.push(xindex);
                 ydata.push({mPrey: malePreyCount, fPrey: femalePreyCount, mPred: malePredatorCount, fPred: femalePredatorCount, f: foodCount});
-                if (xindex > 300) {
+                if (xindex > statsW) {
                     xdata.shift();
                     ydata.shift();
                 }
@@ -421,12 +422,12 @@
                 //  ydata.push(-y);
 
                 var total = 0;
-                var s = 2;
+                var s = statsS;
 
-                var graphType = 1;
+                var graphType = 0;
 
                 if (graphType === 2) {
-                    var c = 2; //200 px
+                    var c = statsS; //200 px
                     var total = 0;
                     for (var i = 0; i < xdata.length - 1; i++) {
                         total = 0;
