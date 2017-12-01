@@ -2,7 +2,7 @@
 <html>
     <head>
         <title>Prey and predator</title>
-        <title> All living things are born, grow, reproduce and die</title>
+        <!--title> All living things are born, grow, reproduce and die</title-->
     </head>
     <body>
 
@@ -358,6 +358,7 @@
 
             function initStatsContainer() {
                 renderer = PIXI.autoDetectRenderer(300, 200, null);
+                renderer.view.style['touch-action'] = 'auto';
                 stage = new PIXI.Stage(0xAABBCC, false);
                 graphen = new PIXI.Graphics();
                 document.getElementById("statistics").appendChild(renderer.view);
