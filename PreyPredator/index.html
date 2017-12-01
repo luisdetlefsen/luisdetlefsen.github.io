@@ -355,10 +355,14 @@
             var debug = true;
             var renderer, stage, graphen;
 
-var statsW = 300, statsH = 100, statsS = 1;
+            var statsW = 300, statsH = 100, statsS = 1;
 
             function initStatsContainer() {
+                var container = document.getElementById('statistics');
+                while (container.firstChild)
+                    container.removeChild(container.firstChild);
                 renderer = PIXI.autoDetectRenderer(statsW, statsH, null);
+                renderer.plugins.interaction.autoPreventDefault = false;
                 renderer.view.style['touch-action'] = 'auto';
                 stage = new PIXI.Stage(0xAABBCC, false);
                 graphen = new PIXI.Graphics();
