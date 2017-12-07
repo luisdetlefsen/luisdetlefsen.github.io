@@ -11,6 +11,7 @@
             body{
                 background-color: #585858 !important;
                 color: black !important;
+                padding: 5px !important;
             }
 
             #container {
@@ -19,6 +20,11 @@
                 margin: 0 auto;
                 padding: 10px;
                 position: relative;
+            }
+
+            .row{
+                /* margin-right: -15px; */
+                margin-left: 0px !important; 
             }
 
             .prey{
@@ -234,12 +240,16 @@
             <div id="container" style="margin:10px;"></div>
 
         </div>
-        <div class="row">
 
-            <div class="col-lg-3 col-md-3 col-sm-3">
-                <div id="statistics"></div>
-            </div>
-            <div class="col-lg-3 col-md-3 col-sm-3">
+        <div class="row">
+            <span>Select a style for the stats graph:</span>
+            <select name="graphOpts" id="graphOpts" onchange="selectGraphType()">
+                <option value="0">Filled</option>
+                <option value="1">Lineal</option>             
+            </select>
+        </div>
+        <div class="row">
+            <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
                 <table>
                     <tr><td style="background-color: #8B008B;color:white;">Prey male</td></tr> 
                     <tr><td style="background-color: #DDA0DD;color:white;">Prey female</td></tr>
@@ -248,8 +258,10 @@
                     <tr><td style="background-color: #FFA500;color:white;">Food</td></tr>
                 </table>
             </div>
+            <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9">
+                <div id="statistics"></div>
+            </div>
         </div>
-
 
 
         <script>
@@ -354,8 +366,22 @@
 
             var debug = true;
             var renderer, stage, graphen;
+            var graphType = 0;
 
-            var statsW = 300, statsH = 100, statsS = 1;
+            var statsW = 300, statsH = 100;
+            var statsS = 1; //Scale. 1 for 100px, 2 for 200px, etc. Should match the variable statsH.
+
+            var malePredatorStat = 0x0000CD;
+            var femalePredatorStat = 0x87CEEB;
+            var foodStat = 0xFFA500;
+            var malePreyStat = 0x8B008B;
+            var femalePreyStat = 0xDDA0DD;
+            var xdata = [], ydata = [];
+            var xindex = 0;
+
+            function selectGraphType() {
+                graphType = parseInt(document.getElementById("graphOpts").value);
+            }
 
             function initStatsContainer() {
                 var container = document.getElementById('statistics');
@@ -372,16 +398,8 @@
                 graphen.position.y = statsH;
                 xindex = 0;
                 xdata = [];
-                ydata = [];                
+                ydata = [];
             }
-
-            var malePredatorStat = 0x0000CD;
-            var femalePredatorStat = 0x87CEEB;
-            var foodStat = 0xFFA5000;
-            var malePreyStat = 0x8B008B;
-            var femalePreyStat = 0xDDA0DD;
-            var xdata = [], ydata = [];
-            var xindex = 0;
 
             function collectStats() {
                 var malePreyCount = 0, femalePreyCount = 0;
@@ -411,7 +429,6 @@
                         foodCount++;
                 }
 
-
                 xdata.push(xindex);
                 ydata.push({mPrey: malePreyCount, fPrey: femalePreyCount, mPred: malePredatorCount, fPred: femalePredatorCount, f: foodCount});
                 if (xindex > statsW) {
@@ -420,86 +437,67 @@
                 }
                 graphen.clear();
 
-
-                var curr = 0;
-                curr += foodCount;
-
                 //  console.clear();
                 //var y = Math.random() * 20;
                 //  ydata.push(-y);
 
                 var total = 0;
-                var s = statsS;
-
-                var graphType = 0;
-
-                if (graphType === 2) {
-                    var c = statsS; //200 px
-                    var total = 0;
-                    for (var i = 0; i < xdata.length - 1; i++) {
-                        total = 0;
-                        total += ydata[i].f + ydata[i].mPred + ydata[i].fPred + ydata[i].mPrey + ydata[i].fPrey;
-
-                        graphen.lineStyle(2, foodStat, 0.5);
-
-                        //  s * ((ydata[i].f * 100) / total);
-
-                        graphen.moveTo(xdata[i], c * -((ydata[i].f * 100) / total));
-                        graphen.lineTo(xdata[i + 1], c * -((ydata[i + 1].f * 100) / total));
-
-                        graphen.lineStyle(2, malePredatorStat, 0.5);
-                        //graphen.moveTo(xdata[i], c * -(ydata[i].mPred + ydata[i].fPred));
-                        graphen.moveTo(xdata[i], c * -(((ydata[i].mPred + ydata[i].fPred) * 100) / total));
-                        graphen.lineTo(xdata[i + 1], c * -(((ydata[i + 1].mPred + ydata[i + 1].fPred) * 100) / total));
-
-                        graphen.lineStyle(2, malePreyStat, 0.5);
-                        graphen.moveTo(xdata[i], c * -(((ydata[i].mPrey + ydata[i].fPrey) * 100) / total));
-                        graphen.lineTo(xdata[i + 1], c * -(((ydata[i + 1].mPrey + ydata[i + 1].fPrey) * 100) / total));
-
-                    }
-                }
 
                 if (graphType === 1) {
-                    var c = 10;
-                    var total = 0;
+                    var total;
                     for (var i = 0; i < xdata.length - 1; i++) {
-                        total = 0;
-                        total += ydata[i].f + ydata[i].mPred + ydata[i].fPred + ydata[i].mPrey + ydata[i].fPrey;
-                        graphen.lineStyle(2, foodStat, 1);
-                        graphen.moveTo(xdata[i], c * -ydata[i].f);
-                        graphen.lineTo(xdata[i + 1], c * -ydata[i + 1].f);
+                        total = ydata[i].f + ydata[i].mPred + ydata[i].fPred + ydata[i].mPrey + ydata[i].fPrey;
 
-                        graphen.lineStyle(2, malePredatorStat, 1);
-                        graphen.moveTo(xdata[i], c * -ydata[i].mPred);
-                        graphen.lineTo(xdata[i + 1], c * -ydata[i + 1].mPred);
+                        graphen.lineStyle(2, foodStat, 0.5);
+                        graphen.moveTo(xdata[i], statsS * -((ydata[i].f * 100) / total));
+                        graphen.lineTo(xdata[i + 1], statsS * -((ydata[i + 1].f * 100) / total));
 
-                        graphen.lineStyle(2, femalePredatorStat, 1);
-                        graphen.moveTo(xdata[i], c * -ydata[i].fPred);
-                        graphen.lineTo(xdata[i + 1], c * -ydata[i + 1].fPred);
+                        graphen.lineStyle(2, malePredatorStat, 0.5);
+                        graphen.moveTo(xdata[i], statsS * -(((ydata[i].mPred + ydata[i].fPred) * 100) / total));
+                        graphen.lineTo(xdata[i + 1], statsS * -(((ydata[i + 1].mPred + ydata[i + 1].fPred) * 100) / total));
 
-                        graphen.lineStyle(2, malePreyStat, 1);
-                        graphen.moveTo(xdata[i], c * -ydata[i].mPrey);
-                        graphen.lineTo(xdata[i + 1], c * -ydata[i + 1].mPrey);
-
-                        graphen.lineStyle(2, femalePreyStat, 1);
-                        graphen.moveTo(xdata[i], c * -ydata[i].fPrey);
-                        graphen.lineTo(xdata[i + 1], c * -ydata[i + 1].fPrey);
-
-
-
+                        graphen.lineStyle(2, malePreyStat, 0.5);
+                        graphen.moveTo(xdata[i], statsS * -(((ydata[i].mPrey + ydata[i].fPrey) * 100) / total));
+                        graphen.lineTo(xdata[i + 1], statsS * -(((ydata[i + 1].mPrey + ydata[i + 1].fPrey) * 100) / total));
                     }
                 }
+                /* works only when real values are needed. When scale is not desired.
+                 if (graphType === 1) {
+                 var c = 10;
+                 var total;
+                 for (var i = 0; i < xdata.length - 1; i++) {
+                 total = ydata[i].f + ydata[i].mPred + ydata[i].fPred + ydata[i].mPrey + ydata[i].fPrey;
+                 graphen.lineStyle(2, foodStat, 1);
+                 graphen.moveTo(xdata[i], c * -ydata[i].f);
+                 graphen.lineTo(xdata[i + 1], c * -ydata[i + 1].f);
+                 
+                 graphen.lineStyle(2, malePredatorStat, 1);
+                 graphen.moveTo(xdata[i], c * -ydata[i].mPred);
+                 graphen.lineTo(xdata[i + 1], c * -ydata[i + 1].mPred);
+                 
+                 graphen.lineStyle(2, femalePredatorStat, 1);
+                 graphen.moveTo(xdata[i], c * -ydata[i].fPred);
+                 graphen.lineTo(xdata[i + 1], c * -ydata[i + 1].fPred);
+                 
+                 graphen.lineStyle(2, malePreyStat, 1);
+                 graphen.moveTo(xdata[i], c * -ydata[i].mPrey);
+                 graphen.lineTo(xdata[i + 1], c * -ydata[i + 1].mPrey);
+                 
+                 graphen.lineStyle(2, femalePreyStat, 1);
+                 graphen.moveTo(xdata[i], c * -ydata[i].fPrey);
+                 graphen.lineTo(xdata[i + 1], c * -ydata[i + 1].fPrey);
+                 }
+                 }*/
 
+                var curr;
                 if (graphType === 0)
                     for (var i = 0; i < xdata.length - 1; i++) {
-                        //          console.log("["+i+"]: X: " + xdata[i] + " Y: " + ydata[i].f);
                         curr = 0;
                         graphen.lineStyle(2, foodStat, 1);
                         //           graphen.moveTo(xdata[i],ydata[i]); 
                         //graphen.lineTo(xdata[i+1],ydata[i+1]);
-                        total = 0;
-                        total += ydata[i].f + ydata[i].mPred + ydata[i].fPred + ydata[i].mPrey + ydata[i].fPrey;
-                        curr -= s * ((ydata[i].f * 100) / total);//ydata[i + 1].f * 10;
+                        total = ydata[i].f + ydata[i].mPred + ydata[i].fPred + ydata[i].mPrey + ydata[i].fPrey;
+                        curr -= statsS * ((ydata[i].f * 100) / total);//ydata[i + 1].f * 10;
                         graphen.moveTo(xdata[i], 0);
 
                         graphen.lineTo(xdata[i], curr);
@@ -507,29 +505,27 @@
 
                         graphen.lineStyle(2, femalePredatorStat, 1);
                         //   graphen.moveTo(xdata[i], curr);
-                        curr -= s * ((ydata[i].fPred * 100) / total);//ydata[i + 1].fPred * 10;
+                        curr -= statsS * ((ydata[i].fPred * 100) / total);//ydata[i + 1].fPred * 10;
                         graphen.lineTo(xdata[i + 1], curr);
 
                         graphen.lineStyle(2, malePredatorStat, 1);
                         //  graphen.moveTo(xdata[i], curr);
-                        curr -= s * ((ydata[i].mPred * 100) / total); //ydata[i + 1].mPred * 10;
+                        curr -= statsS * ((ydata[i].mPred * 100) / total); //ydata[i + 1].mPred * 10;
                         graphen.lineTo(xdata[i + 1], curr);
 
                         graphen.lineStyle(2, femalePreyStat, 1);
                         //   graphen.moveTo(xdata[i], curr);
-                        curr -= s * ((ydata[i].fPrey * 100) / total); //ydata[i + 1].fPrey * 10;
+                        curr -= statsS * ((ydata[i].fPrey * 100) / total); //ydata[i + 1].fPrey * 10;
                         graphen.lineTo(xdata[i + 1], curr);
 
                         graphen.lineStyle(2, malePreyStat, 1);
                         //    graphen.moveTo(xdata[i], curr);
-                        curr -= s * ((ydata[i].mPrey * 100) / total); //ydata[i + 1].mPrey * 10;
+                        curr -= statsS * ((ydata[i].mPrey * 100) / total); //ydata[i + 1].mPrey * 10;
                         graphen.lineTo(xdata[i + 1], curr);
-
                     }
                 graphen.position.x -= 1;
 
                 renderer.render(stage);
-
             }
 
             function increaseAgeInterval() {
