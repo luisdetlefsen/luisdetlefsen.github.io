@@ -370,6 +370,9 @@
                 stage.addChild(graphen);
                 graphen.position.x = statsW;
                 graphen.position.y = statsH;
+                xindex = 0;
+                xdata = [];
+                ydata = [];                
             }
 
             var malePredatorStat = 0x0000CD;
@@ -1238,7 +1241,6 @@
                     }
                     //     }
                 }
-
                 //Update predators
                 for (var i = 0; i < predators.length; i++) {
                     if (predators[i].energy <= 0 || predators[i].mood === DEAD) {
