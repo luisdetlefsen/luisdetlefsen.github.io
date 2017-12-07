@@ -112,9 +112,6 @@
 
                 </div>
             </div>
-
-
-
         </div>
 
 
@@ -230,7 +227,7 @@
                 <button type="submit" class="btn btn-primary" id="btnStart" onclick="start()">Start</button>
             </div>
             <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">                    
-                <button type="submit" class="btn btn-danger" id="btnStop" onclick='stop()'>Stop</button>                
+                <button type="submit" class="btn btn-danger" id="btnStop" onclick='stop()' style='display:  none;'>Stop</button>                
             </div>
         </div>
 
@@ -1341,39 +1338,31 @@
                                 mate.mood = MATING;
                                 mate.texture = sleepingTexture;
                             }
-
-
                         }
-
-
-
                     }
-
-
                 }
-
-
                 collectStats();
-
             }
-
 
             function update(delta) {
                 updateLogic();
             }
 
             function stop() {
+                document.getElementById("btnStart").style.display = "block";
+                document.getElementById("btnStop").style.display = "none";
                 app.ticker.remove(update);
                 if (foodIntervalHandle)
                     window.clearInterval(foodIntervalHandle);
                 if (ageIntervalHandle)
                     window.clearInterval(ageIntervalHandle);
                 running = false;
-
                 // recycleWorld();
             }
 
             function start() {
+                document.getElementById("btnStart").style.display = "none";
+                document.getElementById("btnStop").style.display = "block";
                 recycleWorld();
                 if (running)
                     stop();
@@ -1385,10 +1374,8 @@
                 running = true;
                 document.getElementById("container").scrollIntoView();
 
-
                 initStatsContainer();
             }
-
 
         </script>
     </body>
