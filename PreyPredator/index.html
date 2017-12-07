@@ -245,6 +245,9 @@
                 <option value="1">Lineal</option>             
             </select>
         </div>
+        <div class="row" id="simTimeDiv">
+            <label>Simulation time:</label> <span id="simTime"></span>
+        </div>
         <div class="row">
             <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
                 <table>
@@ -266,6 +269,8 @@
              * FIXME: a prey should not get out of the bounds of the world when it is running away
              predator should increase its energy when it eats a prey
              * TODO: prey should die if it gets in contact with a predator
+             * TODO: newborns should not have max energy
+             * TODO: there should be a max age to reproduce
              prey should have an age
              predator should have an age
              prey and predator should have a life expectancy
@@ -360,6 +365,9 @@
 
             var foodIntervalHandle;
             var ageIntervalHandle;
+            var simTimeHandle;
+
+            var simTime;
 
             var debug = true;
             var renderer, stage, graphen;
@@ -550,7 +558,20 @@
 
             function createFoodInterval() {
                 addFoodToWorld();
+            }
 
+            function increaseSimInterval() {
+                simTime++;
+                var seconds = 0, minutes = 0;
+                if (simTime > 59) {
+                    minutes = Math.floor(simTime / 60);
+                    seconds = simTime % 60;
+                    document.getElementById("simTime").innerHTML = minutes + ":" + seconds;
+                } else {
+                    document.getElementById("simTime").innerHTML = "00:" + ("0" + simTime).slice(-2);
+                }
+                if (simTime >= 300)
+                    stop();
             }
 
             function loadSettings() {
@@ -988,7 +1009,7 @@
                 for (var i = 0; i < preys.length; i++) {
                     if (preys[i].mood !== DEAD)
                         continue;
-                    if (hitTestRectangle(p, preys[i]))
+                    if (preys[i].food > 0 && hitTestRectangle(p, preys[i]))
                         return preys[i];
                 }
                 return false;
@@ -1356,6 +1377,8 @@
                     window.clearInterval(foodIntervalHandle);
                 if (ageIntervalHandle)
                     window.clearInterval(ageIntervalHandle);
+                if (simTimeHandle)
+                    window.clearInterval(simTimeHandle);
                 running = false;
                 // recycleWorld();
             }
@@ -1368,10 +1391,12 @@
                     stop();
                 foodIntervalHandle = window.setInterval(createFoodInterval, FOOD_INTERVAL);
                 ageIntervalHandle = window.setInterval(increaseAgeInterval, AGE_INTERVAL);
+                simTimeHandle = window.setInterval(increaseSimInterval, 1000);
                 loadSettings();
                 fillWorld();
                 app.ticker.add(update);
                 running = true;
+                simTime = 0;
                 document.getElementById("container").scrollIntoView();
 
                 initStatsContainer();
