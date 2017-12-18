@@ -586,6 +586,13 @@
                 DISTANCE_PREY_MATE = parseInt(document.getElementById('preyMateDistance').value);
                 debug = document.getElementById('inDebug').checked ? true : false;
                 PREY_MATE_ENERGY_THRESHOLD = parseFloat(document.getElementById('preyMateThreshold').value);
+                
+                MAX_PREY_ENERGY = parseInt(document.getElementById('maxPreyEnergy').value);
+                PREY_MATING_DURATION = parseInt(document.getElementById('preyMatingDuration').value);
+                PREY_MATE_SPAN = parseInt(document.getElementById('preyMateSpan').value);
+                MAX_PREY_AGE = parseInt(document.getElementById('preyMaxAge').value);
+                MIN_PREY_MATE_AGE = parseFloat(document.getElementById('preyMinMateAge'));
+                
                 food = [];
                 preys = [];
                 predators = [];
