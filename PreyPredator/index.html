@@ -103,7 +103,7 @@
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                         <label for="preyMaxAge">Max age</label>
-                        <input class="form-control" id='preyMaxAge' type="number" value="1000" step="1" min="0" />
+                        <input class="form-control" id='preyMaxAge' type="number" value="10" step="1" min="0" />
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                         <label for="preyMinMateAge">Min age to reproduce</label>
@@ -301,6 +301,8 @@
             var windowWidth = window.innerWidth * 0.95;
             var windowHeight = window.innerHeight * 0.7;
             var app;
+            var MALE = 0, FEMALE = 1;
+            var GENDER = [MALE, FEMALE];
             var UP = 0, DOWN = 1, RIGHT = 2, LEFT = 3;
             var XDIR = [RIGHT, LEFT];
             var YDIR = [UP, DOWN];
@@ -324,40 +326,52 @@
             var preySkullTexture = PIXI.Texture.fromImage(imagesBasePath + 'preySkull.png');
             var emptyPlateTexture = PIXI.Texture.fromImage(imagesBasePath + 'emptyPlate.png');
             var predatorDeadTexture = PIXI.Texture.fromImage(imagesBasePath + 'predatorDead.png');
-            var DISTANCE_PREY_MATE = 40; //distance to detect and chase a prey of opposite gender
-            var DISTANCE_PREDATOR_MATE = 60;
-            var MALE = 0, FEMALE = 1;
-            var GENDER = [MALE, FEMALE];
-            var NORMAL_HEARTBEAT = 60;
-            var DISTACE_TO_PREDATOR = 50;
-            var DISTANCE_TO_DETECT_FOOD = 30;
-            var DISTANCE_TO_DETECT_PREY = 250;
-            var MAX_PREY_ENERGY = 1000;
-            var MAX_PREDATOR_ENERGY = 5000;
-            var PREDATOR_EAT_THRESHOLD = 0.95;
+
             var running = false;
-            var PREY_SPEED = 5, PREDATOR_SPEED = 3;
-            var predatorCount = 3, preyCount = 5, foodCount = 5;
+
+            //prey settings
+            var preyCount = 5;
+            var PREY_SPEED = 5;
             var PREY_MATE_ENERGY_THRESHOLD = 0.4;
-            var PREDATOR_MATE_ENERGY_THRESHOLD = 0.6;
-            var EAT_THRESHOLD = 0.8;
+            var PREY_EAT_THRESHOLD = 0.8;
             var PREY_MATING_DURATION = 100;
             var PREY_MATE_SPAN = 1000;
+            var PREY_AGE_MAX = 10;
+            var PREY_MATE_AGE_MIN = 5;
+            var PREY_MATE_DISTANCE = 40; //distance to detect and chase a prey of opposite gender
+            var PREY_DISTACE_TO_PREDATOR = 50;
+            var PREY_DISTANCE_TO_DETECT_FOOD = 30;
+            var PREY_ENERGY_MAX = 1000;
+            var PREY_NORMAL_HEARTBEAT = 60;
+
+            //predator settings
+            var predatorCount = 3;
             var PREDATOR_MATING_DURATION = 200;
             var PREDATOR_MATE_SPAN = 100;
-            var MAX_FOOD_ENERGY = 200;
+            var PREDATOR_MATE_ENERGY_THRESHOLD = 0.6;
+            var PREDATOR_SPEED = 3;
+            var PREDATOR_EAT_THRESHOLD = 0.95;
+            var PREDATOR_AGE_MAX = 20;
+            var PREDATOR_MATE_AGE_MIN = 5;
+            var PREDATOR_ENERGY_MAX = 5000;
+            var PREDATOR_DETECT_PREY_DISTANCE = 250;
+            var PREDATOR_MATE_DISTANCE = 60;
+
+            //food settings
+            var FOOD_ENERGY_MAX = 200;
             var FOOD_INTERVAL = 10000;
+            var foodCount = 5;
+
+            //general settings
+            var debug = true;
             var AGE_INTERVAL = 5000;
-            var MAX_PREY_AGE = 10;
-            var MAX_PREDATOR_AGE = 20;
-            var MIN_PREY_MATE_AGE = 5;
-            var MIN_PREDATOR_MATE_AGE = 5;
+
 
             var food = [];
             var foodIdSeq = 0;
-            var spriteLength = 50;
             var preyIdSeq = 0;
             var predatorIdSeq = 0;
+            var spriteLength = 50;
             var preys = [];
             var predators = [];
 
@@ -367,13 +381,13 @@
 
             var simTime;
 
-            var debug = true;
             var renderer, stage, graphen;
             var graphType = 0;
 
+
+            //stats
             var statsW = 300, statsH = 100;
             var statsS = 1; //Scale. 1 for 100px, 2 for 200px, etc. Should match the variable statsH.
-
             var malePredatorStat = 0x0000CD;
             var femalePredatorStat = 0x87CEEB;
             var foodStat = 0xFFA500;
@@ -535,7 +549,7 @@
                 for (var i = 0; i < preys.length; i++) {
                     if (preys[i].mood === DEAD)
                         continue;
-                    if (preys[i].age >= MAX_PREY_AGE) {
+                    if (preys[i].age >= PREY_AGE_MAX) {
                         preys[i].energy = 0;
                         preys[i].mood = DEAD;
                         preys[i].texture = deadTexture;
@@ -545,7 +559,7 @@
                 for (var i = 0; i < predators.length; i++) {
                     if (predators[i].mood === DEAD)
                         continue;
-                    if (predators[i].age >= MAX_PREDATOR_AGE) {
+                    if (predators[i].age >= PREDATOR_AGE_MAX) {
                         predators[i].energy = 0;
                         predators[i].mood = DEAD;
                         predators[i].texture = predatorDeadTexture;
@@ -575,40 +589,40 @@
             function loadSettings() {
                 //prey settings
                 preyCount = parseInt(document.getElementById('preyAmount').value);
-                PREY_SPEED = parseInt(document.getElementById('preySpeed').value);            
-                DISTACE_TO_PREDATOR = parseInt(document.getElementById('distancePredator').value);
-                DISTANCE_TO_DETECT_FOOD = parseInt(document.getElementById('distanceFood').value);
-                EAT_THRESHOLD = parseFloat(document.getElementById('eatThreshold').value);
-                DISTANCE_PREY_MATE = parseInt(document.getElementById('preyMateDistance').value);
-                PREY_MATE_ENERGY_THRESHOLD = parseFloat(document.getElementById('preyMateThreshold').value);               
-                MAX_PREY_ENERGY = parseInt(document.getElementById('maxPreyEnergy').value);
+                PREY_SPEED = parseInt(document.getElementById('preySpeed').value);
+                PREY_DISTACE_TO_PREDATOR = parseInt(document.getElementById('distancePredator').value);
+                PREY_DISTANCE_TO_DETECT_FOOD = parseInt(document.getElementById('distanceFood').value);
+                PREY_EAT_THRESHOLD = parseFloat(document.getElementById('eatThreshold').value);
+                PREY_MATE_DISTANCE = parseInt(document.getElementById('preyMateDistance').value);
+                PREY_MATE_ENERGY_THRESHOLD = parseFloat(document.getElementById('preyMateThreshold').value);
+                PREY_ENERGY_MAX = parseInt(document.getElementById('maxPreyEnergy').value);
                 PREY_MATING_DURATION = parseInt(document.getElementById('preyMatingDuration').value);
                 PREY_MATE_SPAN = parseInt(document.getElementById('preyMateSpan').value);
-                MAX_PREY_AGE = parseInt(document.getElementById('preyMaxAge').value);
-                MIN_PREY_MATE_AGE = parseInt(document.getElementById('preyMinMateAge').value);       
-                
+                PREY_AGE_MAX = parseInt(document.getElementById('preyMaxAge').value);
+                PREY_MATE_AGE_MIN = parseInt(document.getElementById('preyMinMateAge').value);
+
                 //predator settings
                 predatorCount = parseInt(document.getElementById('predatorCount').value);
                 PREDATOR_SPEED = parseInt(document.getElementById('predatorSpeed').value);
-                DISTANCE_PREDATOR_MATE = parseInt(document.getElementById('predatorMateDistance').value);
-                DISTANCE_TO_DETECT_PREY = parseInt(document.getElementById('distanceDetectPrey').value);
-                MAX_PREDATOR_ENERGY = parseInt(document.getElementById('maxPredatorEnergy').value);                
+                PREDATOR_MATE_DISTANCE = parseInt(document.getElementById('predatorMateDistance').value);
+                PREDATOR_DETECT_PREY_DISTANCE = parseInt(document.getElementById('distanceDetectPrey').value);
+                PREDATOR_ENERGY_MAX = parseInt(document.getElementById('maxPredatorEnergy').value);
                 PREDATOR_EAT_THRESHOLD = parseFloat(document.getElementById('predatorEatThreshold').value);
                 PREDATOR_MATE_ENERGY_THRESHOLD = parseFloat(document.getElementById('predatorMateThreshold').value);
                 PREDATOR_MATING_DURATION = parseInt(document.getElementById('predatorMatingDuration').value);
                 PREDATOR_MATE_SPAN = parseInt(document.getElementById('predatorMateSpan').value);
-                MAX_PREDATOR_AGE = parseInt(document.getElementById('predatorMaxAge').value);                               
-                MIN_PREDATOR_MATE_AGE = parseInt(document.getElementById('predatorMinMateAge').value);
-                
+                PREDATOR_AGE_MAX = parseInt(document.getElementById('predatorMaxAge').value);
+                PREDATOR_MATE_AGE_MIN = parseInt(document.getElementById('predatorMinMateAge').value);
+
                 //food settings
-                MAX_FOOD_ENERGY = parseInt(document.getElementById('maxFoodEnergy').value);
+                FOOD_ENERGY_MAX = parseInt(document.getElementById('maxFoodEnergy').value);
                 FOOD_INTERVAL = parseInt(document.getElementById('foodInterval').value);
                 foodCount = parseInt(document.getElementById('foodAmount').value);
-                
+
                 //general settings
                 debug = document.getElementById('inDebug').checked ? true : false;
                 AGE_INTERVAL = parseInt(document.getElementById('ageInterval').value);
-                
+
                 food = [];
                 preys = [];
                 predators = [];
@@ -669,15 +683,15 @@
                 prey.ydir = YDIR[getRandomInt(0, 1)];
                 prey.mood = HAPPY;
                 prey.interactiveChildren = false;
-                prey.heartBeat = NORMAL_HEARTBEAT;
-                prey.energy = MAX_PREY_ENERGY;
+                prey.heartBeat = PREY_NORMAL_HEARTBEAT;
+                prey.energy = PREY_ENERGY_MAX;
                 prey.gender = GENDER[getRandomInt(0, 1)];
                 prey.matingDuration = 0;
                 prey.mateSpan = 0;
-                prey.food = 10;//MAX_PREY_ENERGY; //when it dies, it provides this amount of food
+                prey.food = PREY_ENERGY_MAX; //when it dies, it provides this amount of food
                 prey.mates = [];
                 prey.plates = [];
-                prey.age = getRandomInt(1, MAX_PREY_AGE);
+                prey.age = getRandomInt(1, PREY_AGE_MAX);
 
                 var baseHealthBar = new PIXI.Sprite(transparentBarTexture);
                 baseHealthBar.x = -25;
@@ -720,17 +734,17 @@
                 if (debug) {
                     var foodLOS = new PIXI.Graphics();
                     foodLOS.lineStyle(2, 0xFFFFFF);
-                    foodLOS.drawCircle(0, 0, DISTANCE_TO_DETECT_FOOD);
+                    foodLOS.drawCircle(0, 0, PREY_DISTANCE_TO_DETECT_FOOD);
                     prey.addChild(foodLOS);
 
                     var enemyLOS = new PIXI.Graphics();
                     enemyLOS.lineStyle(2, 0xFF0000);
-                    enemyLOS.drawCircle(0, 0, DISTACE_TO_PREDATOR);
+                    enemyLOS.drawCircle(0, 0, PREY_DISTACE_TO_PREDATOR);
                     prey.addChild(enemyLOS);
 
                     var mateLOS = new PIXI.Graphics();
                     mateLOS.lineStyle(2, 0x800080);
-                    mateLOS.drawCircle(0, 0, DISTANCE_PREY_MATE);
+                    mateLOS.drawCircle(0, 0, PREY_MATE_DISTANCE);
                     prey.addChild(mateLOS);
 
                 }
@@ -774,7 +788,7 @@
                 predator.y = y ? y : getRandomInt(spriteLength, app.renderer.height - spriteLength);
                 predator.xdir = XDIR[getRandomInt(0, 1)];
                 predator.ydir = YDIR[getRandomInt(0, 1)];
-                predator.energy = MAX_PREDATOR_ENERGY;
+                predator.energy = PREDATOR_ENERGY_MAX;
                 predator.interactiveChildren = false;
                 predator.mood = LURKING;
                 predator.gender = GENDER[getRandomInt(0, 1)];
@@ -782,7 +796,7 @@
                 predator.mateSpan = 0;
                 predator.mates = [];
                 predator.plates = [];
-                predator.age = getRandomInt(1, MAX_PREDATOR_AGE);
+                predator.age = getRandomInt(1, PREDATOR_AGE_MAX);
 
 
                 var baseHealthBar = new PIXI.Sprite(transparentBarTexture);
@@ -823,17 +837,17 @@
                 if (debug) {
                     var foodLOS = new PIXI.Graphics();
                     foodLOS.lineStyle(2, 0xFFFFFF);
-                    foodLOS.drawCircle(0, 0, DISTANCE_TO_DETECT_PREY);
+                    foodLOS.drawCircle(0, 0, PREDATOR_DETECT_PREY_DISTANCE);
                     predator.addChild(foodLOS);
 
                     /*   var enemyLOS = new PIXI.Graphics();
                      enemyLOS.lineStyle(2, 0xFF0000);
-                     enemyLOS.drawCircle(0, 0, DISTACE_TO_PREDATOR);
+                     enemyLOS.drawCircle(0, 0, PREY_DISTACE_TO_PREDATOR);
                      predator.addChild(enemyLOS);*/
 
                     var mateLOS = new PIXI.Graphics();
                     mateLOS.lineStyle(2, 0x800080);
-                    mateLOS.drawCircle(0, 0, DISTANCE_PREDATOR_MATE);
+                    mateLOS.drawCircle(0, 0, PREDATOR_MATE_DISTANCE);
                     predator.addChild(mateLOS);
 
                 }
@@ -860,7 +874,7 @@
                 food.anchor.set(0.5);
                 food.x = getRandomInt(spriteLength, app.renderer.width - spriteLength);
                 food.y = getRandomInt(spriteLength, app.renderer.height - spriteLength);
-                food.energy = MAX_FOOD_ENERGY;
+                food.energy = FOOD_ENERGY_MAX;
                 return food;
             }
 
@@ -894,7 +908,7 @@
             }
 
             function isPredatorMateNear(x, y, gender, id) {
-                var threshold = DISTANCE_PREDATOR_MATE;
+                var threshold = PREDATOR_MATE_DISTANCE;
                 var mateDir = {xdir: null, ydir: null};
                 for (var i = 0; i < predators.length; i++) {
                     if (predators[i].gender === gender)
@@ -905,7 +919,7 @@
                         continue;
                     if (predators[i].mood === DEAD)
                         continue;
-                    if (predators[i].age <= MIN_PREDATOR_MATE_AGE)
+                    if (predators[i].age <= PREDATOR_MATE_AGE_MIN)
                         continue;
                     if (Math.abs(predators[i].x - x) < threshold && Math.abs(predators[i].y) - y < threshold) {
                         if (predators[i].x < x)
@@ -923,7 +937,7 @@
             }
 
             function isPreyMateNear(x, y, gender, id) {
-                var threshold = DISTANCE_PREY_MATE;
+                var threshold = PREY_MATE_DISTANCE;
                 var mateDir = {xdir: null, ydir: null};
                 for (var i = 0; i < preys.length; i++) {
                     if (gender === preys[i].gender) //do not allow same gender sex
@@ -934,7 +948,7 @@
                         continue;
                     if (preys[i].mood === DEAD)
                         continue;
-                    if (preys[i].age <= MIN_PREY_MATE_AGE)
+                    if (preys[i].age <= PREY_MATE_AGE_MIN)
                         continue;
                     if (Math.abs(preys[i].x - x) < threshold && Math.abs(preys[i].y - y) < threshold) {
                         if (preys[i].x < x)
@@ -1000,11 +1014,11 @@
                         continue;
                     if (predators[i].mood === MATING)
                         continue;
-                    if (predators[i].age <= MIN_PREDATOR_MATE_AGE)
+                    if (predators[i].age <= PREDATOR_MATE_AGE_MIN)
                         continue;
                     if (predators[i].mood === DEAD)
                         continue;
-                    if (predators[i].energy >= MAX_PREDATOR_ENERGY * PREDATOR_MATE_ENERGY_THRESHOLD && hitTestRectangle(m, predators[i]))
+                    if (predators[i].energy >= PREDATOR_ENERGY_MAX * PREDATOR_MATE_ENERGY_THRESHOLD && hitTestRectangle(m, predators[i]))
                         return predators[i];
                 }
             }
@@ -1017,11 +1031,11 @@
                         continue;
                     if (preys[i].mood === MATING)
                         continue;
-                    if (preys[i].age <= MIN_PREY_MATE_AGE)
+                    if (preys[i].age <= PREY_MATE_AGE_MIN)
                         continue;
                     if (preys[i].mood === DEAD)
                         continue;
-                    if (preys[i].energy > PREY_MATE_ENERGY_THRESHOLD * MAX_PREY_ENERGY && hitTestRectangle(m, preys[i])) //do not mate with dead preys
+                    if (preys[i].energy > PREY_MATE_ENERGY_THRESHOLD * PREY_ENERGY_MAX && hitTestRectangle(m, preys[i])) //do not mate with dead preys
                         return preys[i];
                 }
                 return false;
@@ -1049,7 +1063,7 @@
             }
 
             function isFoodNear(x, y) {
-                var threshold = DISTANCE_TO_DETECT_FOOD;
+                var threshold = PREY_DISTANCE_TO_DETECT_FOOD;
                 var foodDir = {xdir: null, ydir: null};
                 for (var i = 0; i < food.length; i++) {
                     if (food[i].energy <= 0)
@@ -1070,7 +1084,7 @@
             }
 
             function isPreyNear(x, y) {
-                var threshold = DISTANCE_TO_DETECT_PREY;
+                var threshold = PREDATOR_DETECT_PREY_DISTANCE;
                 var foodDir = {xdir: null, ydir: null};
                 for (var i = 0; i < preys.length; i++) { //search for dead preys first
                     if (preys[i].mood === DEAD && preys[i].food > 0) {
@@ -1106,7 +1120,7 @@
             }
 
             function isPredatorNear(x, y) {
-                var threshold = DISTACE_TO_PREDATOR;
+                var threshold = PREY_DISTACE_TO_PREDATOR;
                 var runDir = {xdir: null, ydir: null};
                 for (var i = 0; i < predators.length; i++) {
                     if (predators[i].mood === DEAD)
@@ -1144,11 +1158,11 @@
 
                     preys[i].mateBar.scale.set(preys[i].mateSpan / PREY_MATE_SPAN, 1);
                     //update energy bar scale and color
-                    preys[i].energyBar.scale.set(preys[i].energy / MAX_PREY_ENERGY, 1);
-                    preys[i].ageBar.scale.set(preys[i].age / MAX_PREY_AGE, 1);
-                    if (preys[i].energy <= MAX_PREY_ENERGY / 2 && preys[i].energy > MAX_PREY_ENERGY / 4) {
+                    preys[i].energyBar.scale.set(preys[i].energy / PREY_ENERGY_MAX, 1);
+                    preys[i].ageBar.scale.set(preys[i].age / PREY_AGE_MAX, 1);
+                    if (preys[i].energy <= PREY_ENERGY_MAX / 2 && preys[i].energy > PREY_ENERGY_MAX / 4) {
                         preys[i].energyBar.tint = 0xFFA500;
-                    } else if (preys[i].energy <= MAX_PREY_ENERGY / 4)
+                    } else if (preys[i].energy <= PREY_ENERGY_MAX / 4)
                         preys[i].energyBar.tint = 0xFF0000;
                     else
                         preys[i].energyBar.tint = 0x00FF00;
@@ -1169,7 +1183,7 @@
                         preys[i].mood = SCARED;
                         preys[i].ydir = predatorNear.ydir;
                         preys[i].xdir = predatorNear.xdir;
-                        preys[i].heartBeat = NORMAL_HEARTBEAT * 3;
+                        preys[i].heartBeat = PREY_NORMAL_HEARTBEAT * 3;
                     }
 
                     //update the prey's heartbeat when it is running away from a predator. 
@@ -1177,10 +1191,10 @@
                     //if heartbeat less than twice as normal, then change mood to worried
                     //if heearteat continues to be more than twice than normal, then consume more energy
                     if (preys[i].mood === SCARED || preys[i].mood === WORRIED) {
-                        if (preys[i].heartBeat <= NORMAL_HEARTBEAT) {
+                        if (preys[i].heartBeat <= PREY_NORMAL_HEARTBEAT) {
                             preys[i].texture = happyTexture;
                             preys[i].mood = HAPPY;
-                        } else if (preys[i].heartBeat < NORMAL_HEARTBEAT * 2 && preys[i].mood === SCARED) {
+                        } else if (preys[i].heartBeat < PREY_NORMAL_HEARTBEAT * 2 && preys[i].mood === SCARED) {
                             preys[i].texture = worriedTexture;
                             preys[i].mood = WORRIED;
                             preys[i].heartBeat--;
@@ -1202,7 +1216,7 @@
 
                     //increase energy if it is eating. Change to happy mood if it has full energy
                     if (preys[i].mood === EATING) {
-                        if (preys[i].energy < MAX_PREY_ENERGY) {
+                        if (preys[i].energy < PREY_ENERGY_MAX) {
                             if (preys[i].plates[0].energy > 0) {
                                 preys[i].energy++;
                                 preys[i].plates[0].energy--;
@@ -1236,7 +1250,7 @@
                     }
 
                     //reproduce only if it has enough energy
-                    if (preys[i].mood !== MATING && preys[i].energy >= MAX_PREY_ENERGY * PREY_MATE_ENERGY_THRESHOLD
+                    if (preys[i].mood !== MATING && preys[i].energy >= PREY_ENERGY_MAX * PREY_MATE_ENERGY_THRESHOLD
                             && preys[i].mateSpan >= PREY_MATE_SPAN) {
                         //get closer to another prey of different sex
                         var mateDir = isPreyMateNear(preys[i].x, preys[i].y, preys[i].gender, preys[i].id);
@@ -1259,7 +1273,7 @@
                     }
 
                     //evaluate if it needs to eat
-                    if (preys[i].mood !== EATING && preys[i].energy <= (MAX_PREY_ENERGY * EAT_THRESHOLD)) {
+                    if (preys[i].mood !== EATING && preys[i].energy <= (PREY_ENERGY_MAX * PREY_EAT_THRESHOLD)) {
                         //get closer to the food
                         var foodDir = isFoodNear(preys[i].x, preys[i].y);
                         if (foodDir) {
@@ -1291,11 +1305,11 @@
                     }
 
                     predators[i].mateBar.scale.set(predators[i].mateSpan / PREDATOR_MATE_SPAN, 1);
-                    predators[i].energyBar.scale.set(predators[i].energy / MAX_PREDATOR_ENERGY, 1);
-                    predators[i].ageBar.scale.set(predators[i].age / MAX_PREDATOR_AGE, 1);
-                    if (predators[i].energy <= MAX_PREDATOR_ENERGY / 2 && predators[i].energy > MAX_PREDATOR_ENERGY / 4) {
+                    predators[i].energyBar.scale.set(predators[i].energy / PREDATOR_ENERGY_MAX, 1);
+                    predators[i].ageBar.scale.set(predators[i].age / PREDATOR_AGE_MAX, 1);
+                    if (predators[i].energy <= PREDATOR_ENERGY_MAX / 2 && predators[i].energy > PREDATOR_ENERGY_MAX / 4) {
                         predators[i].energyBar.tint = 0xFFA500;
-                    } else if (predators[i].energy <= MAX_PREDATOR_ENERGY / 4)
+                    } else if (predators[i].energy <= PREDATOR_ENERGY_MAX / 4)
                         predators[i].energyBar.tint = 0xFF0000;
                     else
                         predators[i].energyBar.tint = 0x00FF00;
@@ -1312,7 +1326,7 @@
                         predators[i].xdir = newPos.xdir;
                     }
 
-                    if (predators[i].mood !== EATING && predators[i].energy <= (MAX_PREDATOR_ENERGY * PREDATOR_EAT_THRESHOLD)
+                    if (predators[i].mood !== EATING && predators[i].energy <= (PREDATOR_ENERGY_MAX * PREDATOR_EAT_THRESHOLD)
                             && predators[i].mood !== MATING) {
                         //get closer to the food
                         var foodDir = isPreyNear(predators[i].x, predators[i].y);
@@ -1333,7 +1347,7 @@
                         predators[i].mateSpan++;
 
                     if (predators[i].mood === EATING) {
-                        if (predators[i].energy < MAX_PREDATOR_ENERGY) {
+                        if (predators[i].energy < PREDATOR_ENERGY_MAX) {
                             if (predators[i].plates[0].food > 0) {
                                 predators[i].energy++;
                                 predators[i].plates[0].food--;
@@ -1364,7 +1378,7 @@
                         continue;
                     }
 
-                    if (predators[i].mood !== MATING && predators[i].energy >= MAX_PREDATOR_ENERGY * PREDATOR_MATE_ENERGY_THRESHOLD && predators[i].mateSpan >= PREDATOR_MATE_SPAN) {
+                    if (predators[i].mood !== MATING && predators[i].energy >= PREDATOR_ENERGY_MAX * PREDATOR_MATE_ENERGY_THRESHOLD && predators[i].mateSpan >= PREDATOR_MATE_SPAN) {
                         var mateDir = isPredatorMateNear(predators[i].x, predators[i].y, predators[i].gender, predators[i].id);
                         if (mateDir) {
                             predators[i].ydir = mateDir.ydir;
