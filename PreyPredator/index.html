@@ -107,7 +107,7 @@
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                         <label for="preyMinMateAge">Min age to reproduce</label>
-                        <input class="form-control" id='preyMinMateAge' type="number" value="0.6" step="0.05" min="0" />
+                        <input class="form-control" id='preyMinMateAge' type="number" value="100" step="1" min="0" />
                     </div>
 
                 </div>
@@ -140,8 +140,8 @@
                     </div>
 
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
-                        <label for="masPredatorEnergy">Max energy</label>
-                        <input class="form-control" id='masPredatorEnergy' type="number" value="5000" step="1" min="0" />
+                        <label for="maxPredatorEnergy">Max energy</label>
+                        <input class="form-control" id='maxPredatorEnergy' type="number" value="5000" step="1" min="0" />
                     </div>
 
 
@@ -157,24 +157,22 @@
 
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                         <label for="predatorMatingDuration">Mating duration</label>
-                        <input class="form-control" id='predatorMatingDuration' type="number" value="0.6" step="0.05" min="0" />
+                        <input class="form-control" id='predatorMatingDuration' type="number" value="200" step="1" min="0" />
                     </div>
 
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                         <label for="predatorMateSpan">Mating span</label>
-                        <input class="form-control" id='predatorMateSpan' type="number" value="0.6" step="0.05" min="0" />
+                        <input class="form-control" id='predatorMateSpan' type="number" value="100" step="1" min="0" />
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                         <label for="predatorMaxAge">Max age</label>
-                        <input class="form-control" id='predatorMaxAge' type="number" value="0.6" step="0.05" min="0" />
+                        <input class="form-control" id='predatorMaxAge' type="number" value="5" step="1" min="0" />
                     </div>
                     <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                         <label for="predatorMinMateAge">Min age to reproduce</label>
-                        <input class="form-control" id='predatorMinMateAge' type="number" value="0.6" step="0.05" min="0" />
+                        <input class="form-control" id='predatorMinMateAge' type="number" value="100" step="1" min="0" />
                     </div>
-
                 </div>
-
             </div>
         </div>
 
@@ -575,23 +573,41 @@
             }
 
             function loadSettings() {
+                //prey settings
                 preyCount = parseInt(document.getElementById('preyAmount').value);
-                PREY_SPEED = parseInt(document.getElementById('preySpeed').value);
-                predatorCount = parseInt(document.getElementById('predatorCount').value);
-                PREDATOR_SPEED = parseInt(document.getElementById('predatorSpeed').value);
-                foodCount = parseInt(document.getElementById('foodAmount').value);
+                PREY_SPEED = parseInt(document.getElementById('preySpeed').value);            
                 DISTACE_TO_PREDATOR = parseInt(document.getElementById('distancePredator').value);
                 DISTANCE_TO_DETECT_FOOD = parseInt(document.getElementById('distanceFood').value);
                 EAT_THRESHOLD = parseFloat(document.getElementById('eatThreshold').value);
                 DISTANCE_PREY_MATE = parseInt(document.getElementById('preyMateDistance').value);
-                debug = document.getElementById('inDebug').checked ? true : false;
-                PREY_MATE_ENERGY_THRESHOLD = parseFloat(document.getElementById('preyMateThreshold').value);
-                
+                PREY_MATE_ENERGY_THRESHOLD = parseFloat(document.getElementById('preyMateThreshold').value);               
                 MAX_PREY_ENERGY = parseInt(document.getElementById('maxPreyEnergy').value);
                 PREY_MATING_DURATION = parseInt(document.getElementById('preyMatingDuration').value);
                 PREY_MATE_SPAN = parseInt(document.getElementById('preyMateSpan').value);
                 MAX_PREY_AGE = parseInt(document.getElementById('preyMaxAge').value);
-                MIN_PREY_MATE_AGE = parseFloat(document.getElementById('preyMinMateAge'));
+                MIN_PREY_MATE_AGE = parseInt(document.getElementById('preyMinMateAge').value);       
+                
+                //predator settings
+                predatorCount = parseInt(document.getElementById('predatorCount').value);
+                PREDATOR_SPEED = parseInt(document.getElementById('predatorSpeed').value);
+                DISTANCE_PREDATOR_MATE = parseInt(document.getElementById('predatorMateDistance').value);
+                DISTANCE_TO_DETECT_PREY = parseInt(document.getElementById('distanceDetectPrey').value);
+                MAX_PREDATOR_ENERGY = parseInt(document.getElementById('maxPredatorEnergy').value);                
+                PREDATOR_EAT_THRESHOLD = parseFloat(document.getElementById('predatorEatThreshold').value);
+                PREDATOR_MATE_ENERGY_THRESHOLD = parseFloat(document.getElementById('predatorMateThreshold').value);
+                PREDATOR_MATING_DURATION = parseInt(document.getElementById('predatorMatingDuration').value);
+                PREDATOR_MATE_SPAN = parseInt(document.getElementById('predatorMateSpan').value);
+                MAX_PREDATOR_AGE = parseInt(document.getElementById('predatorMaxAge').value);                               
+                MIN_PREDATOR_MATE_AGE = parseInt(document.getElementById('predatorMinMateAge').value);
+                
+                //food settings
+                MAX_FOOD_ENERGY = parseInt(document.getElementById('maxFoodEnergy').value);
+                FOOD_INTERVAL = parseInt(document.getElementById('foodInterval').value);
+                foodCount = parseInt(document.getElementById('foodAmount').value);
+                
+                //general settings
+                debug = document.getElementById('inDebug').checked ? true : false;
+                AGE_INTERVAL = parseInt(document.getElementById('ageInterval').value);
                 
                 food = [];
                 preys = [];
