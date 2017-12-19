@@ -55,7 +55,12 @@
                 /*background-image: url("Content/img/bg.bmp");*/
                 min-height: 600px !important;
             }
-
+            .carousel-indicators {
+                bottom:-50px !important;
+            }
+            .carousel-inner {
+                margin-bottom:50px !important;
+            }
             .carousel-caption{
                 color:black !important;
             }
@@ -63,9 +68,9 @@
             .carousel-indicators > li{
                 border-color: black !important;
             }
-            
-           .carousel-indicators .active {
-                background-color: yellow !important;
+
+            .carousel-indicators .active {
+                background-color: black !important;
                 border-color: black !important;
             }
 
@@ -84,12 +89,6 @@
         <div class="modal fade" id="initScreen" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Prey - Predator</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
                     <div class="modal-body">
                         <!-- modal body start  -->
                         <div id="carouselTutorial" class="carousel slide" >
@@ -101,24 +100,24 @@
                                 <li data-target="#carouselTutorial" data-slide-to="3"></li>
                                 <li data-target="#carouselTutorial" data-slide-to="4"></li>
                                 <li data-target="#carouselTutorial" data-slide-to="5"></li>
+                                <li data-target="#carouselTutorial" data-slide-to="6"></li>
                             </ol>
 
                             <!-- Wrapper for slides -->
                             <div class="carousel-inner" role="listbox">
                                 <div class="item active">
-                                    <img src="Content/img/bg.bmp" alt="...">
-
-                                    Welcome. Objective goes here
-                                    <div class="carousel-caption">
-                                        Caption one
-                                    </div>
+                                    <img src="Content/img/bg.bmp" alt="Simulation elements">
+                                    The simulation contains three elements. Predator, prey, and food. The predator will hunt the prey and will eat it when the prey dies.
+                                    The prey will look for food and try to escape from the predators.
                                 </div>
                                 <div class="item">
-                                    <img src="Content/img/bg.bmp" alt="...">
-                                    Explain stats
-                                    <div class="carousel-caption">
-                                        Caption two
-                                    </div>
+                                    <img src="Content/img/bg2.bmp" alt="Element stats">
+                                    The preys and predators, like all living things, they are born, grow, reproduce and die. 
+                                </div>
+                                <div class="item">
+                                    <img src="Content/img/bg3.bmp" alt="Element stats">
+                                    The preys and predators are aware of their surroundings, but they have a limited vision. They can detect food, mating partners,
+                                    and threats only when they are within their line of sight.
                                 </div>
                                 <div class="item">
                                     <div class="panel panel-info">
@@ -139,7 +138,7 @@
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                                                     <label for="distanceFood">Distance to detect food</label>
-                                                    <input class="form-control" id='distanceFood' type="number" value="30" step="1" min="0" />
+                                                    <input class="form-control" id='distanceFood' type="number" value="80" step="1" min="0" />
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                                                     <label for="preyMateDistance">Distance to detect mate</label>
@@ -171,14 +170,10 @@
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                                                     <label for="preyMinMateAge">Min age to reproduce</label>
-                                                    <input class="form-control" id='preyMinMateAge' type="number" value="100" step="1" min="0" />
+                                                    <input class="form-control" id='preyMinMateAge' type="number" value="5" step="1" min="0" />
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div class="carousel-caption">
-                                        Caption three
                                     </div>
                                 </div>
                                 <div class="item">
@@ -198,7 +193,6 @@
                                                     <label for="predatorMateDistance">Distance to detect mate</label>
                                                     <input class="form-control" id='predatorMateDistance' type="number" value="60" step="1" min="0" />
                                                 </div>
-
                                                 <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                                                     <label for="distanceDetectPrey">Distance to detect prey</label>
                                                     <input class="form-control" id='distanceDetectPrey' type="number" value="60" step="1" min="0" />
@@ -221,22 +215,18 @@
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                                                     <label for="predatorMateSpan">Mating span</label>
-                                                    <input class="form-control" id='predatorMateSpan' type="number" value="100" step="1" min="0" />
+                                                    <input class="form-control" id='predatorMateSpan' type="number" value="2000" step="1" min="0" />
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                                                     <label for="predatorMaxAge">Max age</label>
-                                                    <input class="form-control" id='predatorMaxAge' type="number" value="5" step="1" min="0" />
+                                                    <input class="form-control" id='predatorMaxAge' type="number" value="8" step="1" min="0" />
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                                                     <label for="predatorMinMateAge">Min age to reproduce</label>
-                                                    <input class="form-control" id='predatorMinMateAge' type="number" value="100" step="1" min="0" />
+                                                    <input class="form-control" id='predatorMinMateAge' type="number" value="3" step="1" min="0" />
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div class="carousel-caption">
-                                        Caption three
                                     </div>
                                 </div>
                                 <div class="item">
@@ -250,7 +240,7 @@
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                                                     <label for="maxFoodEnergy">Energy provided</label>
-                                                    <input class="form-control" id='maxFoodEnergy' type="number" value="200" step="1" min="0" />
+                                                    <input class="form-control" id='maxFoodEnergy' type="number" value="500" step="1" min="0" />
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                                                     <label for="foodInterval">Appear every</label>
@@ -258,9 +248,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="carousel-caption">
-                                        Caption three
                                     </div>
                                 </div>
                                 <div class="item">
@@ -272,7 +259,6 @@
                                                     <label for="ageInterval">Increase age every</label>
                                                     <input class="form-control" id='ageInterval' type="number" value="5000" step="1" min="0" />
                                                 </div>
-
                                                 <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
                                                     <div class="form-check">
                                                         <label class="form-check-label">
@@ -284,11 +270,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="carousel-caption">
-                                        Caption three
-                                    </div>
                                 </div>
-
                             </div>
 
                             <!-- Controls -->
@@ -310,33 +292,20 @@
             </div>
         </div>
 
-
-
-
-
-
-
-
-
-
-
         <div class='row'>
-            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+            <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">
                 <button type="submit" class="btn btn-primary" id="btnStart" onclick="start()">Start</button>
             </div>
-            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">                    
+            <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">                    
                 <button type="submit" class="btn btn-danger" id="btnStop" onclick='stop()' style='display:  none;'>Stop</button>                
             </div>
-            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">                    
+            <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">                    
                 <button type="submit" class="btn btn-primary    " onclick='showConfig()'>Settings</button>                
             </div>
         </div>
 
-
         <div class="row">
-
             <div id="container" style="margin:10px;"></div>
-
         </div>
 
         <div class="row">
@@ -364,10 +333,10 @@
             </div>
         </div>
 
-
         <script>
             /* 
              * FIXME: a prey should not get out of the bounds of the world when it is running away
+             * FIXME: a prey should get closer to the food. Should eat only when food is by its side
              predator should increase its energy when it eats a prey
              * TODO: prey should die if it gets in contact with a predator
              * TODO: newborns should not have max energy
