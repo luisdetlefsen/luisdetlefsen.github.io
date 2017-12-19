@@ -52,10 +52,22 @@
 
             .panel-body{
                 margin: 15px !important;
-                background-image: url("Content/img/bg.bmp");
-                min-height: 500px !important;
+                /*background-image: url("Content/img/bg.bmp");*/
+                min-height: 600px !important;
             }
 
+            .carousel-caption{
+                color:black !important;
+            }
+
+            .carousel-indicators > li{
+                border-color: black !important;
+            }
+            
+           .carousel-indicators .active {
+                background-color: yellow !important;
+                border-color: black !important;
+            }
 
             .carousel-indicators li{
                 border-radius: 0 !important;
@@ -292,8 +304,7 @@
                         <!-- modal body end -->
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary">Save changes</button>
-                        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Done</button>
                     </div>
                 </div>
             </div>
@@ -317,7 +328,7 @@
                 <button type="submit" class="btn btn-danger" id="btnStop" onclick='stop()' style='display:  none;'>Stop</button>                
             </div>
             <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">                    
-                <button type="submit" class="btn btn-primary" onclick='showConfig()'>Settings</button>                
+                <button type="submit" class="btn btn-primary    " onclick='showConfig()'>Settings</button>                
             </div>
         </div>
 
