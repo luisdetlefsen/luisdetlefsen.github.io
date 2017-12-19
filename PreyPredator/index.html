@@ -56,7 +56,7 @@
                 min-height: 500px !important;
             }
 
-           
+
             .carousel-indicators li{
                 border-radius: 0 !important;
             }
@@ -315,6 +315,9 @@
             </div>
             <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">                    
                 <button type="submit" class="btn btn-danger" id="btnStop" onclick='stop()' style='display:  none;'>Stop</button>                
+            </div>
+            <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">                    
+                <button type="submit" class="btn btn-primary" onclick='showConfig()'>Settings</button>                
             </div>
         </div>
 
@@ -1528,14 +1531,20 @@
                 initStatsContainer();
             }
 
-
-            $(window).load(function () {
+            function showConfig() {
                 $('#initScreen').modal('show');
+            }
 
+            function initCarousel() {
                 $('.carousel').carousel({
                     interval: 0
                     , wrap: false
                 });
+            }
+
+            $(window).load(function () {
+                showConfig();
+                initCarousel();
             });
 
         </script>
