@@ -1,0 +1,1 @@
+Dropzone.options.myAwesomeDropzone={paramName:"file",maxFilesize:2,dictDefaultMessage:"Sube fotos, grabaciones, videos, o documentos ",accept:function(e,o){"justinbieber.jpg"==e.name?o("Naha, you don't."):o()}};
